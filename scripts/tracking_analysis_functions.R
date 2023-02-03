@@ -8,6 +8,7 @@
 loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "minute", "halfhour", "hour"), datetime_origin = "1970-01-01 00:00:00") {
   require("tictoc")
   require("data.table")
+  require("stringr")
   
   if (!(average_by %in% c("second", "minute", "halfhour", "hour"))) {
     stop("'average_by' must be 'second', 'minute', 'halfhour', or 'hour'")

@@ -74,9 +74,11 @@ plot <- ggplot(avg.day.combined, aes(x = datetime, y = mean_speed_mm, group = sa
 
 ## Use 'facet_wrap' to separate based on columns in meta_data
 ## works like an equation ~ means 'by', and you can use addition ('shell+strain' or 'strain+conspecifics')
-plot + shade_colours() + facet_wrap(~shell+strain)
+plot + shade_colours() + facet_wrap(~shell+conspecifics, ncol = 2)
 
 
+plot + shade_colours() + facet_wrap(~conspecifics, ncol = 2)
+plot + shade_colours() + facet_wrap(~shell, ncol = 2)
 
 
 
