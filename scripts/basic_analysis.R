@@ -55,6 +55,11 @@ ggplot(avg.day, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() +
 # This imports a list of files
 als.data.list <- lapply(als.files, function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
 
+## Can then save out the files for re-use
+saveRDS(als.data.list, file = "als_data_list.rds")
+
+als.data.list <- readRDS("als_data_list.rds")
+
 # ... and then averages across days by halfhour
 avg.day.list <- lapply(als.data.list, function(x) averageDay(als_data = x, units = "halfhour", days_include = "all"))
 
@@ -70,6 +75,11 @@ plot <- ggplot(avg.day.combined, aes(x = datetime, y = mean_speed_mm, group = sa
 ## Use 'facet_wrap' to separate based on columns in meta_data
 ## works like an equation ~ means 'by', and you can use addition ('shell+strain' or 'strain+conspecifics')
 plot + shade_colours() + facet_wrap(~shell+strain)
+
+
+
+
+
 
 
 
