@@ -134,9 +134,50 @@ averageDay <- function(als_data = als_data, units = c("second", "minute", "halfh
   
 }
 
+## This function takes als_data (for one individual) that already contains whether each entry is a peak (regular input is half_hour averaged)
+## Intervals are kept inside (might slow it down, but keeps environment clear)
+returnPeakPercentages <- function(als_data = als_data, zoo_times = FALSE) {
+  
+  dawn_intervals <- list()
+  dusk_intervals <- list()
+  
+  if(zoo_times) {
+    for (i in 02:08) {
+      dawn_intervals[[i]] <- interval(as.POSIXct(paste("1970-01-", i, " 06:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-", i, " 07:30:00", sep = ""), tz = "GMT"))
+      dusk_intervals[[i]] <- interval(as.POSIXct(paste("1970-01-", i, " 18:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-", i, " 19:30:00", sep = ""), tz = "GMT"))
+    }
+  } else {
+    for (i in 02:08) {
+      dawn_intervals[[i]] <- interval(as.POSIXct(paste("1970-01-", i, " 07:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-", i, " 08:30:00", sep = ""), tz = "GMT"))
+      dusk_intervals[[i]] <- interval(as.POSIXct(paste("1970-01-", i, " 21:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-", i, " 22:30:00", sep = ""), tz = "GMT"))
+    }
+  }
+  
+  # Calculate TRUE/FALSE for each interval
+  dawn_peaks <- lapply(dawn_intervals[2:8], function(x) {
+    df <- als_data[als_data$peaks == "yes",]
+    output <- df$datetime %within% x
+    output <- any(output)
+    return(output)
+  })
+  
+  dusk_peaks <- lapply(dusk_intervals[2:8], function(x) {
+    df <- als_data[als_data$peaks == "yes",]
+    output <- df$datetime %within% x
+    output <- any(output)
+    return(output)
+  })
+  
+  dawn_peak_percentage <- length(dawn_peaks[dawn_peaks == TRUE]) / length(dawn_peaks)
+  dusk_peak_percentage <- length(dusk_peaks[dusk_peaks == TRUE]) / length(dusk_peaks)
+  
+  output <- list(dawn_peak_percentage, dusk_peak_percentage)
+  names(output) <- c("dawn", "dusk")
+  return(output)
+}
+
 
 ## These functions add colours based on the time of day to a ggplot
-
 
 shade_colours <- function(x = x, ...) {
   scale_fill_manual(values = c("night" = "grey", "dawn" = "yellow", "day" = "white", "dusk" = "yellow"))
@@ -161,7 +202,6 @@ geom_rect_shading_bz <- function(new_bz_times = TRUE, ...) {
   geom_rect(data = rects_day_newbz, aes(ymin=-Inf, ymax=Inf, xmin=xstart, xmax=xend, fill=col), alpha =0.5, inherit.aes = FALSE)
 }
 
-
 geom_rect_shading_zoo <- function(zoological_times = FALSE, ...) {
   rects_day_zoo <- data.frame(xstart = c(as.POSIXct("1970-01-01 00:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"), 
                                          as.POSIXct("1970-01-01 07:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
@@ -180,7 +220,6 @@ geom_rect_shading_zoo <- function(zoological_times = FALSE, ...) {
                                       "night"))
   geom_rect(data = rects_day_zoo, aes(ymin=-Inf, ymax=Inf, xmin=xstart, xmax=xend, fill=col), alpha =0.5, inherit.aes = FALSE, fill = c("grey", "yellow", "white", "yellow", "grey"))
 }
-
 
 geom_rect_shading_bz_7days <- function(new_bz_times = TRUE, ...) {
   rects_day_newbz <- data.frame(xstart = c(as.POSIXct("1970-01-01 00:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"), 
@@ -208,7 +247,6 @@ geom_rect_shading_bz_7days <- function(new_bz_times = TRUE, ...) {
   
   geom_rect(data = rects, aes(ymin=-Inf, ymax=Inf, xmin=xstart, xmax=xend, fill=col), alpha =0.5, inherit.aes = FALSE)
 }
-
 
 geom_rect_shading_zoo_7days <- function(zoological_times = FALSE, ...) {
   rects_day_zoo <- data.frame(xstart = c(as.POSIXct("1970-01-01 00:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"), 
