@@ -47,7 +47,7 @@ avg.day <- averageDay(als_data = als.data.2, units = "halfhour", days_include = 
 # Can you '+ geom_rect_shading_bz' or '+ geom_rect_shading_zoo' to add shading based on times
 # Colours can be specified with '+ shade_colours()' which uses grey/yellow/white colour scheme (can make your own)
 
-ggplot(avg.day, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() +
+ggplot(avg.day, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line()
 
 
 ######## COMMANDS FOR MULTIPLE DATASETS & ADDING META_DATA & PLOTTING ########
