@@ -137,7 +137,7 @@ averageDay <- function(als_data = als_data, units = c("second", "minute", "halfh
 
 ## Run Python functions to find peaks
 ## Remember, python is 0 indexed, so add 1 to the indices
-
+require(reticulate)
 scipy.signal <- import("scipy.signal")
 
 ## This function finds peaks using scipy.signal$find_peaks
