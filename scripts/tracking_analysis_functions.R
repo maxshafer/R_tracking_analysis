@@ -5,7 +5,7 @@
 ## This funtion takes a file path of an als file, loads it into memory, and summarises it by second, minute (default behaviour), halfhour, or hour
 ## Returns the summarised data, labelled with sample_id
 
-loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "minute", "halfhour", "hour"), datetime_origin = "1970-01-01 00:00:00") {
+loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "minute", "halfhour", "hour"), datetime_origin = "1970-01-01 00:00:00", normalise = "both") {
   require("tictoc")
   require("data.table")
   require("stringr")
@@ -54,6 +54,21 @@ loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "min
   
   ## Add sample ID
   summarised$sample_id <- str_extract(path_to_file, pattern = "FISH........_c._r.")
+  
+  ## Normalize x and y coordinates
+  if (normalise %in% c("both", "x")) {
+    summarised$mean_x_nt <- summarised$mean_x_nt/max(summarised$mean_x_nt)
+    if (normalise == "both") {
+      summarised$mean_y_nt <- summarised$mean_y_nt/max(summarised$mean_y_nt)
+    }
+  }
+  
+  if (normalise == "y") {
+    summarised$mean_y_nt <- summarised$mean_y_nt/max(summarised$mean_y_nt)
+  }
+  
+  # This reverses the order of y_coordiantes (higher numbers in original data are closer to the bottom)
+  summarised$mean_y_nt <- (summarised$mean_y_nt - max(summarised$mean_y_nt))*-1
   
   return(summarised)
 }
