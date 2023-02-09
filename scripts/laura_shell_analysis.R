@@ -47,6 +47,11 @@ avg.day.combined <- Reduce(rbind, avg.day.list)
 # Add meta_data
 avg.day.combined <- merge(avg.day.combined, meta_data, by = "sample_id")
 
+#################################################################################################################
+######### Setting subsets to according dataframe that is wanted #########
+#################################################################################################################
+
+
 ## Then plot
 plot <- ggplot(avg.day.combined, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
 
@@ -149,11 +154,28 @@ dev.off()
 
 test <- avg.day.combined %>% group_by(sex, strain, shell, conspecifics, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
-plot <- ggplot(test, aes(x = mean_x_nt, y = mean_y_nt, group = sex, color = sex)) + geom_point() + theme_classic()
+plot <- ggplot(test, aes(x = mean_x_nt, y = mean_y_nt, group = sex, color = sex, alpha = 0.5)) + geom_point() + theme_classic()
 
 plot + scale_y_reverse()+ facet_wrap(~strain+conspecifics+shell)
 
+##################################################################################################
+############Extract strange fish FISH20230125_c2_r1 #####
+##################################################################################################
 
 
 
 
+##################################################################################################
+############Extract strange fish FISH20230125_c2_r1 #####
+##################################################################################################
+
+
+p <- ggplot(avg.day.combined[avg.day.combined$species == "Lamoce",], aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+
+t <- avg.day.combined %>% group_by(sex, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+
+plot <- ggplot(t, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+
+plot + scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + scale_colour_manual(values = c("black", "red"))
+
+plot + facet_wrap(~shell+sex)
