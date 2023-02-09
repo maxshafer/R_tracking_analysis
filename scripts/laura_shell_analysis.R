@@ -5,7 +5,6 @@ library(gsheet)
 library(tictoc)
 library(data.table)
 library(dplyr)
-library(reticulate)
 
 source("/Volumes/BZ/Scientific Data/RG-AS04-Data01/R_tracking_analysis/scripts/tracking_analysis_functions.R")
 
@@ -81,9 +80,6 @@ plot <- ggplot(t, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)
 
 plot + scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + scale_colour_manual(values = c("black", "red"))
 
-png(file = "outputs/no_shell_1.png", width = 10, height = 10, res = 500,units = "in")
-ave.all
-dev.off()
 
 
 ##################################################################################################
@@ -104,6 +100,10 @@ plot <- ggplot(test_1, aes(x = datetime, y = mean_speed_mm, group = sex, color =
 
 ave.all <- plot + shade_colours() + facet_wrap(~strain+conspecifics+shell)
 ave.all
+
+png(file = "outputs/no_shell_1.png", width = 10, height = 10, res = 500,units = "in")
+ave.all
+dev.off()
 
 ##################################################################################################
 #### 24h plot with all (strains, shell, conspecs, sex) coloured by shell/no shell ####
@@ -168,6 +168,18 @@ plot + scale_y_reverse()+ facet_wrap(~strain+conspecifics+shell)
 ##################################################################################################
 ############Extract strange fish FISH20230125_c2_r1 #####
 ##################################################################################################
+
+# This imports a single file (the 10th file path) and summarises by minute
+als.data <- loadALSfiles(path_to_file = als.files[10], average_by = "minute")
+# This takes a single dataset and further summarises it by halfhour (probably not so useful, but can save space/computation time)
+als.data.2 <- summariseALSdata(als_data = als.data, average_by = "halfhour")
+avg.day <- averageDay(als_data = als.data.2, units = "halfhour", days_include = "all")
+
+# Can you '+ geom_rect_shading_bz' or '+ geom_rect_shading_zoo' to add shading based on times
+# Colours can be specified with '+ shade_colours()' which uses grey/yellow/white colour scheme (can make your own)
+
+ggplot(avg.day, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line()
+
 
 
 p <- ggplot(avg.day.combined[avg.day.combined$species == "Lamoce",], aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
