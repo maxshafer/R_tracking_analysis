@@ -5,7 +5,12 @@
 ## This funtion takes a file path of an als file, loads it into memory, and summarises it by second, minute (default behaviour), halfhour, or hour
 ## Returns the summarised data, labelled with sample_id
 
+<<<<<<< HEAD
 loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "minute", "halfhour", "hour"), datetime_origin = "1970-01-01 00:00:00", normalise = "both") {  require("tictoc")
+=======
+loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "minute", "halfhour", "hour"), datetime_origin = "1970-01-01 00:00:00", normalise = "both") {
+  require("tictoc")
+>>>>>>> 974dad5e26098244e23d3a0a3664e8eb185d7871
   require("data.table")
   require("stringr")
   
@@ -54,7 +59,10 @@ loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "min
   ## Add sample ID
   summarised$sample_id <- str_extract(path_to_file, pattern = "FISH........_c._r.")
   
+<<<<<<< HEAD
   
+=======
+>>>>>>> 974dad5e26098244e23d3a0a3664e8eb185d7871
   ## Normalize x and y coordinates
   if (normalise %in% c("both", "x")) {
     summarised$mean_x_nt <- summarised$mean_x_nt/max(summarised$mean_x_nt)
@@ -152,8 +160,13 @@ averageDay <- function(als_data = als_data, units = c("second", "minute", "halfh
 
 ## Run Python functions to find peaks
 ## Remember, python is 0 indexed, so add 1 to the indices
+<<<<<<< HEAD
 
 # scipy.signal <- import("scipy.signal")
+=======
+require(reticulate)
+scipy.signal <- import("scipy.signal")
+>>>>>>> 974dad5e26098244e23d3a0a3664e8eb185d7871
 
 ## This function finds peaks using scipy.signal$find_peaks
 ## Returns an als data frame with peaks labelled along with their prominences
