@@ -121,12 +121,12 @@ averageDay <- function(als_data = als_data, units = c("second", "minute", "halfh
     als_data <- als_data %>% mutate(half_hour = minute(half_hour))
   }
   
-  if (days_include != "all") {
+  if (days_include[1] != "all") {
     if (!(is.numeric(days_include))) {
       stop("'days_include' must be a numeric vector")
     }
     # If there is only one entry for day 1, assume the user hasn't consider it
-    if (nrow(als_data[als_data$day == 1]) == 1) {
+    if (nrow(als_data[als_data[,"day"] %in% 1]) == 1) {
       days_include <- days_include + 1
     }
     als_data <- als_data[als_data$day %in% days_include,]
