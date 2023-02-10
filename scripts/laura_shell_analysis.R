@@ -100,15 +100,59 @@ plot <- ggplot(test, aes(x = datetime, y = mean_speed_mm, group = sex, color = s
 
 test_1 <- avg.day.combined %>% group_by(sex, strain, shell, conspecifics, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
+
 plot <- ggplot(test_1, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point(size = 0.75) + geom_line() + theme_classic()
 
 ave.all <- plot + shade_colours() + facet_wrap(~strain+conspecifics+shell)
 
-ave.all_by_sex <- ave.all + scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + scale_colour_manual(values = c("black", "red"))
+ave.all_by_sex <- ave.all + 
+  scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + 
+  scale_colour_manual(values = c("black", "red")) 
 
+ave.all_by_sex
+
+### save as png
+  
 png(file = "outputs/bio23.png", width = 15, height = 10, res = 500,units = "in")
 ave.all_by_sex
 dev.off()
+
+
+
+
+
+
+## test to put the standard deviation (does not take on the colours of the sex!!)
+
+
+test_1 <- 
+  avg.day.combined %>% 
+  group_by(datetime, sex, strain, shell, conspecifics, hour, half_hour) %>% 
+  mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt),
+            mean = mean(mean_speed_mm), SD=sd(mean_speed_mm), 
+            mean_SD_plus = mean + (mean - SD),
+            mean_SD_minus = mean - (mean - SD))
+
+
+plot <- ggplot(test_1, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz() + shade_colours() + geom_point(size = 0.75) + geom_line() + theme_classic()
+
+plot <- ggplot(test_1, aes(x = datetime, y = mean_speed_mm, ymin=mean_SD_minus, ymax=mean_SD_plus, fill=sex, group = sex, color = sex)) + 
+  geom_line() + 
+  geom_ribbon(alpha=0.5) +
+  shade_colours(fill=sex) + 
+  geom_point(size = 0.75) +
+  theme_classic()
+
+ave.all <- plot + shade_colours() + facet_wrap(~strain+conspecifics+shell)
+
+ave.all_by_sex <- ave.all + 
+  scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + 
+  scale_colour_manual(values = c("black", "red")) 
+ave.all_by_sex
+
+
+
 
 ##################################################################################################
 #### 24h plot with all (strains, shell, conspecs, sex) coloured by shell/no shell ####
@@ -208,7 +252,7 @@ avg.day.combined %>%
             mean_SD_plus = mean + (mean - SD),
             mean_SD_minus = mean - (mean - SD)) %>%
   ggplot(., aes(x=datetime, y=mean, color=sex)) +
-  geom_line() +
+  geom_line() 
   #geom_errorbar(aes(ymin=mean_SD_minus, ymax=mean_SD_plus), width=.2,
   #              position=position_dodge(0))
 
@@ -231,13 +275,20 @@ avg.day.combined_summar %>%
 
 
 
+avg.day.combined_summar %>%
+  ggplot(., aes(x=datetime, y=mean, color=sex)) +
+  geom_line() +
+  stat_summary(fun.data = "mean_sdl",
+               fun.args= list(mult = 1),
+               geom= "smooth",
+               se=TRUE)
+
+ggplot(data=avg.day.combined_summar, aes(x=datetime, y=mean, ymin=mean_SD_minus, ymax=mean_SD_plus, fill=sex, color=sex)) + 
+  geom_line() + 
+  geom_ribbon(alpha=0.5) 
 
 
 
-
-
-
-mean=mean(value), sd=sd(value)
 
 
 
