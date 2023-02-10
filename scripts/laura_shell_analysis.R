@@ -76,9 +76,13 @@ p <- ggplot(avg.day.combined[avg.day.combined$shell == "n",], aes(x = datetime, 
 
 t <- avg.day.combined %>% group_by(sex, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
-plot <- ggplot(t, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+plot <- ggplot(t, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point(size=0.75) + geom_line() + theme_classic()
 
-plot + scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + scale_colour_manual(values = c("black", "red"))
+all.noshell <- plot + scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + scale_colour_manual(values = c("black", "red"))
+
+png(file = "outputs/bio23_noshell.png", width = 15, height = 9, res = 500,units = "in")
+all.noshell
+dev.off()
 
 
 
@@ -96,13 +100,14 @@ plot <- ggplot(test, aes(x = datetime, y = mean_speed_mm, group = sex, color = s
 
 test_1 <- avg.day.combined %>% group_by(sex, strain, shell, conspecifics, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
-plot <- ggplot(test_1, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+plot <- ggplot(test_1, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point(size = 0.75) + geom_line() + theme_classic()
 
 ave.all <- plot + shade_colours() + facet_wrap(~strain+conspecifics+shell)
-ave.all
 
-png(file = "outputs/no_shell_1.png", width = 10, height = 10, res = 500,units = "in")
-ave.all
+ave.all_by_sex <- ave.all + scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + scale_colour_manual(values = c("black", "red"))
+
+png(file = "outputs/bio23.png", width = 15, height = 10, res = 500,units = "in")
+ave.all_by_sex
 dev.off()
 
 ##################################################################################################
@@ -158,12 +163,6 @@ plot <- ggplot(test, aes(x = mean_x_nt, y = mean_y_nt, group = sex, color = sex,
 
 plot + scale_y_reverse()+ facet_wrap(~strain+conspecifics+shell)
 
-##################################################################################################
-############Extract strange fish FISH20230125_c2_r1 #####
-##################################################################################################
-
-
-
 
 ##################################################################################################
 ############Extract strange fish FISH20230125_c2_r1 #####
@@ -173,23 +172,25 @@ plot + scale_y_reverse()+ facet_wrap(~strain+conspecifics+shell)
 als.data <- loadALSfiles(path_to_file = "/Volumes/BZ/Scientific Data/RG-AS04-Data01/LCP/FISH20230125/20230125_c2_Neolamprologus-multifasciatus/FISH20230125_c2_r1_Neolamprologus-multifasciatus_sf_EXCLUDE/FISH20230125_c2_r1_Neolamprologus-multifasciatus_sf_als.csv", average_by = "minute")
 # This takes a single dataset and further summarises it by halfhour (probably not so useful, but can save space/computation time)
 als.data.2 <- summariseALSdata(als_data = als.data, average_by = "halfhour")
+
+
+########### to average only parts of the days within the week ######
 avg.day_first3 <- averageDay(als_data = als.data.2, units = "halfhour", days_include = c(2,3,4))
 avg.day_last3 <- averageDay(als_data = als.data.2, units = "halfhour", days_include = c(5,6,7))
 
 # Can you '+ geom_rect_shading_bz' or '+ geom_rect_shading_zoo' to add shading based on times
 # Colours can be specified with '+ shade_colours()' which uses grey/yellow/white colour scheme (can make your own)
 
+ggplot(avg.day_first3, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line()
 ggplot(avg.day_last3, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line()
-ggplot(als.data.2, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz_7days() + shade_colours() + geom_point() + geom_line()
+
+ggplot(als.data.2, aes(x = datetime, y = mean_speed_mm)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + geom_point(size = 0.75) + 
+  geom_line() + scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + 
+  scale_colour_manual(values = c("black", "red")) +
+  theme_classic()
 
 
-
-p <- ggplot(avg.day.combined[avg.day.combined$species == "Lamoce",], aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
-
-t <- avg.day.combined %>% group_by(sex, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
-
-plot <- ggplot(t, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
-
-plot + scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + scale_colour_manual(values = c("black", "red"))
-
-plot + facet_wrap(~shell+sex)
+png(file = "outputs/switcher_1.png", width = 20, height = 10, res = 500,units = "in")
+als.data.2
+dev.off()
