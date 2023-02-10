@@ -43,7 +43,7 @@ als.files.cra <- list.files(path = ".", recursive = TRUE, pattern = "Neolamprolo
 #######################################################################################################################
 
 # This imports a list of files
-als.data.list <- lapply(als.files, function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
+als.data.list <- lapply(als.files[9:12], function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
 als.data.list.bri <- lapply(als.files.bri, function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
 als.data.list.cra <- lapply(als.files.cra, function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
 
@@ -107,13 +107,15 @@ names(avg_day_plots_cra) <- unlist(lapply(als.data.list.cra.2, function(x) x$sam
 #######################################################################################################################
 #### Find peaks #######################################################################################################
 #######################################################################################################################
-avg.day.list <- lapply(avg.day.list, function(x) findPeaks(als_data = x, distance = 4, prominence = 4))
-avg.day.list.bri <- lapply(avg.day.list.bri, function(x) findPeaks(als_data = x, distance = 4, prominence = 4))
-avg.day.list.cra <- lapply(avg.day.list.cra, function(x) findPeaks(als_data = x, distance = 4, prominence = 4))
+dist <- 4
+prom <- 7
+avg.day.list <- lapply(avg.day.list, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
+avg.day.list.bri <- lapply(avg.day.list.bri, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
+avg.day.list.cra <- lapply(avg.day.list.cra, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
 
-als.data.list.2 <- lapply(als.data.list.2, function(x) findPeaks(als_data = x, distance = 4, prominence = 4))
-als.data.list.bri.2 <- lapply(als.data.list.bri.2, function(x) findPeaks(als_data = x, distance = 4, prominence = 4))
-als.data.list.cra.2 <- lapply(als.data.list.cra.2, function(x) findPeaks(als_data = x, distance = 4, prominence = 4))
+als.data.list.2 <- lapply(als.data.list.2, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
+als.data.list.bri.2 <- lapply(als.data.list.bri.2, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
+als.data.list.cra.2 <- lapply(als.data.list.cra.2, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
 
 
 ### Return peak_percentages
@@ -136,26 +138,35 @@ df$percentages <- rowMeans(df[,c("dawn_percentages", "dusk_percentages")])
 df$percentages_avg_day <- rowMeans(df[,c("dawn_avg_day_percentages", "dusk_avg_day_percentages")])
 
 all_data <- merge(df, meta_data, by = "sample_id")
-all_data <- all_data[order(all_data$dawn_avg_day_percentages),]
+all_data <- all_data[order(all_data$dawn_percentages),]
 all_data$sample_id <- factor(all_data$sample_id, levels = all_data$sample_id)
 
-## This is a good output, tells me how many fish per generation type average a peak at dawn or dusk, or the combined values
-table(all_data$dawn_avg_day_percentages, all_data$Generation)
-table(all_data$dusk_avg_day_percentages, all_data$Generation)
-table(all_data$percentages_avg_day, all_data$Generation)
+# ## This is a good output, tells me how many fish per generation type average a peak at dawn or dusk, or the combined values
+# table(all_data$dawn_avg_day_percentages, all_data$Generation)
+# table(all_data$dusk_avg_day_percentages, all_data$Generation)
+# table(all_data$percentages_avg_day, all_data$Generation)
 
 #######################################################################################################################
 ####### Make PEAK PLOTS ###############################################################################################
 #######################################################################################################################
 
-# bar_plot <- ggplot(all_data, aes(x = sample_id, y = dawn_avg_day_percentages, fill = Generation)) + theme_classic() + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90))
-# 
-# x_y <- ggplot(all_data, aes(x = dawn_avg_day_percentages, y = dusk_avg_day_percentages, colour = Generation)) + theme_classic() + geom_jitter() + theme(axis.text.x = element_text(angle = 90))
-# dawn_density <- ggplot(all_data, aes(x = dawn_avg_day_percentages, colour = Generation)) + theme_classic() + geom_density()
-# dusk_density <- ggplot(all_data, aes(x = dusk_avg_day_percentages, colour = Generation)) + theme_classic() + geom_density() + coord_flip()
-# 
-# # Put them together to display
-# dawn_density + plot_spacer() + x_y + dusk_density + plot_layout(ncol = 2, guides = "collect")
+bar_plot <- ggplot(all_data, aes(x = sample_id, y = dawn_percentages, fill = Generation)) + theme_classic() + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90))
+
+x_y <- ggplot(all_data, aes(x = dawn_percentages, y = dusk_percentages, colour = Generation, group = Generation)) + theme_classic() + geom_jitter() + theme(axis.text.x = element_text(angle = 90))
+dawn_density <- ggplot(all_data, aes(x = dawn_percentages, colour = Generation)) + theme_classic() + geom_density()
+dusk_density <- ggplot(all_data, aes(x = dusk_percentages, colour = Generation)) + theme_classic() + geom_density() + coord_flip()
+
+# Put them together to display
+combined_plot <- dawn_density + plot_spacer() + x_y + dusk_density + plot_layout(ncol = 2, guides = "collect")
+
+pdf(file = "summary_plots_BriCra_Hybrids.pdf", width = 10, height = 7.5)
+combined_plot
+dev.off()
+
+pdf(file = "summary_histogram_BriCra_Hybrids.pdf", width = 15, height = 5)
+bar_plot
+dev.off()
+
 
 # ## This plots the 'peak prominences' from the Python code
 # all_list <- append(als.data.list.2, als.data.list.bri.2)
@@ -172,9 +183,7 @@ table(all_data$percentages_avg_day, all_data$Generation)
 
 ## This is a crude way of plotting which points are 'peaks' according to the algorithm
 
-ggplot(als.data.list.2[[3]], aes(x = datetime, y = mean_speed_mm, color = peaks, group = sample_id)) + geom_rect_shading_bz_7days() + shade_colours() + geom_point() + geom_line(color = "black") + theme_classic()
-
-ggplot(als.data.2, aes(x = daytime, y = mean_speed_mm, group = day, colour = peaks)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line(color = "black") + theme_classic()
+# ggplot(als.data.list.2[[25]], aes(x = datetime, y = mean_speed_mm, color = peaks, group = sample_id)) + geom_rect_shading_bz_7days() + shade_colours() + geom_point() + geom_line(color = "black") + theme_classic()
 
 
 #######################################################################################################################
@@ -202,7 +211,7 @@ for (i in seq_along(vector)) {
     prev_var = vector[i-1] + 1
   }
   
-  pdf(file = paste("myOut_", i, ".pdf", sep = ""), width = 16, height = 24)
+  pdf(file = paste("avg_day_plots_BriCra_Hybrids_page_", i, ".pdf", sep = ""), width = 16, height = 24)
   print(wrap_plots(combined_avg_day_plots[prev_var:curr_var], ncol = 4, guides = "collect"))
   dev.off()
 }
