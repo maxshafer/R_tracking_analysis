@@ -9,9 +9,7 @@ library(reticulate)
 library(patchwork)
 
 source("/Volumes/BZ/Scientific Data/RG-AS04-Data01/R_tracking_analysis/scripts/tracking_analysis_functions.R")
-
-## Set the directory to the '_analysis2' folder, or wherever all of the als files are located
-setwd("/Volumes/BZ/Scientific Data/RG-AS04-Data01/Hybrid_sleep_videos/_analysis2/")
+source("/Volumes/BZ/Scientific Data/RG-AS04-Data01/R_tracking_analysis/scripts/peak_finding_functions.R")
 
 #######################################################################################################################
 ####### LOAD IN GOOGLE SHEET DATA #####################################################################################
@@ -30,12 +28,13 @@ head(meta_data)
 
 ####### IDENTIFY THE FILES FOR IMPORT #######
 
+## Set the directory to the '_analysis2' folder, or wherever all of the als files are located
+setwd("/Volumes/BZ/Scientific Data/RG-AS04-Data01/Hybrid_sleep_videos/_analysis2/")
+
 # List the files in the current directory that are als files
 # This also finds the original runs for brichardi and crassus which have been transferred
 # These need to be analysed differently (different times)
-als.files <- list.files(path = ".", recursive = TRUE, pattern = "Hybrids_Neobri_Neocra_su_als.csv")
-als.files.bri <- list.files(path = ".", recursive = TRUE, pattern = "Neolamprologus-brichardi_su_als.csv")
-als.files.cra <- list.files(path = ".", recursive = TRUE, pattern = "Neolamprologus-crassus_su_als.csv")
+als.files <- list.files(path = ".", recursive = TRUE, pattern = "als.csv")
 
 
 #######################################################################################################################
@@ -43,9 +42,7 @@ als.files.cra <- list.files(path = ".", recursive = TRUE, pattern = "Neolamprolo
 #######################################################################################################################
 
 # This imports a list of files
-als.data.list <- lapply(als.files[9:12], function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
-als.data.list.bri <- lapply(als.files.bri, function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
-als.data.list.cra <- lapply(als.files.cra, function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
+als.data.list <- lapply(als.files, function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
 
 ## Can then save out the files for re-use
 saveRDS(als.data.list, file = "als_data_list.rds")
@@ -53,8 +50,6 @@ saveRDS(als.data.list, file = "als_data_list.rds")
 als.data.list <- readRDS("als_data_list.rds")
 
 als.data.list.2 <- lapply(als.data.list, function(x) summariseALSdata(als_data = x, average_by = "halfhour"))
-als.data.list.bri.2 <- lapply(als.data.list.bri, function(x) summariseALSdata(als_data = x, average_by = "halfhour"))
-als.data.list.cra.2 <- lapply(als.data.list.cra, function(x) summariseALSdata(als_data = x, average_by = "halfhour"))
 
 
 #######################################################################################################################
@@ -68,40 +63,29 @@ als.data.list.2 <- lapply(als.data.list.2, function(x) {
   return(x)
 })
 
-als.data.list.bri.2 <- lapply(als.data.list.bri.2, function(x) {
-  x$daytime <- as.POSIXct(x$datetime, format = '%Y-%m-%d %H:%M:%S')
-  day(x$daytime) <- 01
-  return(x)
+all_days_plots <- lapply(als.data.list.2, function(x) {
+  if (grepl("FISH20210205", x$sample_id[1]) | grepl("FISH20220216", x$sample_id[1])) {
+    return(ggplot(x, aes(x = daytime, y = mean_speed_mm, group = day, colour = day)) + geom_rect_shading_zoo() + shade_colours() + geom_point() + geom_line() + ylim(0,120) + ggtitle(paste(x$sample_id[1])))
+  } else {
+    return(ggplot(x, aes(x = daytime, y = mean_speed_mm, group = day, colour = day)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + ylim(0,120) + ggtitle(paste(x$sample_id[1])))
+  }
 })
 
-als.data.list.cra.2 <- lapply(als.data.list.cra.2, function(x) {
-  x$daytime <- as.POSIXct(x$datetime, format = '%Y-%m-%d %H:%M:%S')
-  day(x$daytime) <- 01
-  return(x)
-})
-
-all_days_plots <- lapply(als.data.list.2, function(x) return(ggplot(x, aes(x = daytime, y = mean_speed_mm, group = day, colour = day)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + ylim(0,120) + ggtitle(paste(x$sample_id[1]))))
 names(all_days_plots) <- unlist(lapply(als.data.list.2, function(x) x$sample_id[1]))
-
-all_days_plots_bri <- lapply(als.data.list.bri.2, function(x) return(ggplot(x, aes(x = daytime, y = mean_speed_mm, group = day, colour = day)) + geom_rect_shading_zoo() + shade_colours() + geom_point() + geom_line() + ylim(0,120) + ggtitle(paste(x$sample_id[1]))))
-names(all_days_plots_bri) <- unlist(lapply(als.data.list.bri.2, function(x) x$sample_id[1]))
-
-all_days_plots_cra <- lapply(als.data.list.cra.2, function(x) return(ggplot(x, aes(x = daytime, y = mean_speed_mm, group = day, colour = day)) + geom_rect_shading_zoo() + shade_colours() + geom_point() + geom_line() + ylim(0,120) + ggtitle(paste(x$sample_id[1]))))
-names(all_days_plots_cra) <- unlist(lapply(als.data.list.cra.2, function(x) x$sample_id[1]))
 
 # This averages by day for a single dataset
 # Importantly, ignore the single entry for day 1 when setting 'days_include'. For example, if you want the first 3 days, do 'days_include = c(1,2,3)' NOT 'days_include = c(2,3,4)'
 avg.day.list <- lapply(als.data.list.2, function(x) averageDay(als_data = x, units = "halfhour", days_include = "all"))
-avg_day_plots <- lapply(avg.day.list, function(x) return(ggplot(x, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + ylim(0,120) + ggtitle(paste(x$sample_id[1]))))
+
+avg_day_plots <- lapply(avg.day.list, function(x) {
+  if (grepl("FISH20210205", x$sample_id[1]) | grepl("FISH20220216", x$sample_id[1])) {
+    return(ggplot(x, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_zoo() + shade_colours() + geom_point() + geom_line() + ylim(0,120) + ggtitle(paste(x$sample_id[1])))
+  } else {
+    return(ggplot(x, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + ylim(0,120) + ggtitle(paste(x$sample_id[1])))
+  }
+})
+
 names(avg_day_plots) <- unlist(lapply(als.data.list.2, function(x) x$sample_id[1]))
-
-avg.day.list.bri <- lapply(als.data.list.bri.2, function(x) averageDay(als_data = x, units = "halfhour", days_include = "all"))
-avg_day_plots_bri <- lapply(avg.day.list.bri, function(x) return(ggplot(x, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_zoo() + shade_colours() + geom_point() + geom_line() + ylim(0,120) + ggtitle(paste(x$sample_id[1]))))
-names(avg_day_plots_bri) <- unlist(lapply(als.data.list.bri.2, function(x) x$sample_id[1]))
-
-avg.day.list.cra <- lapply(als.data.list.cra.2, function(x) averageDay(als_data = x, units = "halfhour", days_include = "all"))
-avg_day_plots_cra <- lapply(avg.day.list.cra, function(x) return(ggplot(x, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_zoo() + shade_colours() + geom_point() + geom_line() + ylim(0,120) + ggtitle(paste(x$sample_id[1]))))
-names(avg_day_plots_cra) <- unlist(lapply(als.data.list.cra.2, function(x) x$sample_id[1]))
 
 
 #######################################################################################################################
@@ -109,31 +93,58 @@ names(avg_day_plots_cra) <- unlist(lapply(als.data.list.cra.2, function(x) x$sam
 #######################################################################################################################
 dist <- 4
 prom <- 7
+
+# Find peaks across the week
 avg.day.list <- lapply(avg.day.list, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
-avg.day.list.bri <- lapply(avg.day.list.bri, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
-avg.day.list.cra <- lapply(avg.day.list.cra, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
-
+# ... and for the average day
 als.data.list.2 <- lapply(als.data.list.2, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
-als.data.list.bri.2 <- lapply(als.data.list.bri.2, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
-als.data.list.cra.2 <- lapply(als.data.list.cra.2, function(x) findPeaks(als_data = x, distance = dist, prominence = prom))
+
+### Return peak_percentages for the week and average day
+percentages.day <- lapply(avg.day.list, function(x) {
+  if (grepl("FISH20210205", x$sample_id[1]) | grepl("FISH20220216", x$sample_id[1])) {
+    y <- returnPeakPercentages(als_data = x, avg_days = TRUE, zoo_times = TRUE)
+  } else {
+    y <- returnPeakPercentages(als_data = x, avg_days = TRUE)
+  }
+  return(y)
+})
+
+percentages <- lapply(als.data.list.2, function(x) {
+  if (grepl("FISH20210205", x$sample_id[1]) | grepl("FISH20220216", x$sample_id[1])) {
+    y <- returnPeakPercentages(als_data = x, avg_days = FALSE, zoo_times = TRUE)
+  } else {
+    y <- returnPeakPercentages(als_data = x, avg_days = FALSE)
+  }
+  return(y)
+})
+
+### Return peak_prominences for the week and average day
+prominences.day <- lapply(als.data.list.2, function(x) {
+  if (grepl("FISH20210205", x$sample_id[1]) | grepl("FISH20220216", x$sample_id[1])) {
+    y <- returnPeakProminences(als_data = x, avg_days = TRUE, zoo_times = TRUE)
+  } else {
+    y <- returnPeakProminences(als_data = x, avg_days = TRUE)
+  }
+  return(y)
+})
+
+prominences <- lapply(als.data.list.2, function(x) {
+  if (grepl("FISH20210205", x$sample_id[1]) | grepl("FISH20220216", x$sample_id[1])) {
+    y <- returnPeakProminences(als_data = x, avg_days = FALSE, zoo_times = TRUE)
+  } else {
+    y <- returnPeakProminences(als_data = x, avg_days = FALSE)
+  }
+  return(y)
+})
+
+### Combine into a dataframe with sample_ids
+df <- tibble(dawn_percentages = unlist(lapply(percentages, function(x) x[[1]])), 
+             dusk_percentages = unlist(lapply(percentages, function(x) x[[2]])), 
+             dawn_avg_day_percentages = unlist(lapply(percentages.day, function(x) x[[1]])), 
+             dusk_avg_day_percentages = unlist(lapply(percentages.day, function(x) x[[2]])), 
+             sample_id = str_extract(als.files, pattern = "FISH........_c._r."))
 
 
-### Return peak_percentages
-percentages.day <- lapply(avg.day.list, function(x) returnPeakPercentages(als_data = x, avg_days = TRUE))
-percentages.day.bri <- lapply(avg.day.list.bri, function(x) returnPeakPercentages(als_data = x, avg_days = TRUE, zoo_times = TRUE))
-percentages.day.cra <- lapply(avg.day.list.cra, function(x) returnPeakPercentages(als_data = x, avg_days = TRUE, zoo_times = TRUE))
-
-percentages <- lapply(als.data.list.2, function(x) returnPeakPercentages(als_data = x))
-percentages.bri <- lapply(als.data.list.bri.2, function(x) returnPeakPercentages(als_data = x, zoo_times = TRUE))
-percentages.cra <- lapply(als.data.list.cra.2, function(x) returnPeakPercentages(als_data = x, zoo_times = TRUE))
-
-dawn <- c(unlist(lapply(percentages.bri, function(x) x[[1]])), unlist(lapply(percentages.cra, function(x) x[[1]])), unlist(lapply(percentages, function(x) x[[1]])))
-dusk <- c(unlist(lapply(percentages.bri, function(x) x[[2]])), unlist(lapply(percentages.cra, function(x) x[[2]])), unlist(lapply(percentages, function(x) x[[2]])))
-
-dawn.avg.day <- c(unlist(lapply(percentages.day.bri, function(x) x[[1]])), unlist(lapply(percentages.day.cra, function(x) x[[1]])), unlist(lapply(percentages.day, function(x) x[[1]])))
-dusk.avg.day <- c(unlist(lapply(percentages.day.bri, function(x) x[[2]])), unlist(lapply(percentages.day.cra, function(x) x[[2]])), unlist(lapply(percentages.day, function(x) x[[2]])))
-
-df <- tibble(dawn_percentages = dawn, dusk_percentages = dusk, dawn_avg_day_percentages = dawn.avg.day, dusk_avg_day_percentages = dusk.avg.day, sample_id = meta_data$sample_id)
 df$percentages <- rowMeans(df[,c("dawn_percentages", "dusk_percentages")])
 df$percentages_avg_day <- rowMeans(df[,c("dawn_avg_day_percentages", "dusk_avg_day_percentages")])
 
@@ -168,15 +179,14 @@ bar_plot
 dev.off()
 
 
-# ## This plots the 'peak prominences' from the Python code
-# all_list <- append(als.data.list.2, als.data.list.bri.2)
-# all_list <- append(all_list, als.data.list.cra.2)
-# 
-# combined <- Reduce(rbind, all_list)
-# 
-# combined_merge <- merge(combined, meta_data, by = "sample_id")
-# 
-# ggplot(combined_merge, aes(x = peak_prominence, colour = Generation)) + theme_classic() + geom_density()
+## This plots the 'peak prominences' from the Python code
+## But this plots all peaks, not just those within the right timepoint?
+names(prominences) <- str_extract(als.files, pattern = "FISH........_c._r.")
+df2 <- data.frame(prominences = unlist(prominences), sample_id = str_extract(names(unlist(prominences)), pattern = "FISH........_c._r."), period = str_extract(names(unlist(prominences)), pattern = "d..."))
+
+all_data2 <- merge(df2, meta_data, by = "sample_id")
+
+ggplot(all_data2, aes(x = Generation, y = prominences, group = interaction(period, Generation), color = interaction(period, Generation))) + geom_boxplot(outlier.colour = "white") + geom_jitter(alpha = 0.5) + theme_classic()
 
 ##### In general, it seems that the F2s and F3s have more peaks (especially at dusk), and their peaks are more prominent, than either parental strain
 ##### It's a bit clearer if I call peaks based on the daily average (eg if the invididual averages a peak)
