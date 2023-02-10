@@ -80,7 +80,7 @@ plot <- ggplot(t, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)
 
 all.noshell <- plot + scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + scale_colour_manual(values = c("black", "red"))
 
-png(file = "outputs/bio23_noshell.png", width = 15, height = 9, res = 500,units = "in")
+png(file = "outputs/bio23_noshell.png", width = 10, height = 9, res = 500,units = "in")
 all.noshell
 dev.off()
 
@@ -194,3 +194,54 @@ ggplot(als.data.2, aes(x = datetime, y = mean_speed_mm)) +
 png(file = "outputs/switcher_1.png", width = 20, height = 10, res = 500,units = "in")
 als.data.2
 dev.off()
+
+
+
+
+
+######## test maxime to put standard deviation (multiple geom_lines)
+
+
+avg.day.combined %>%
+  group_by(datetime, sex) %>%
+  summarise(mean = mean(mean_speed_mm), SD=sd(mean_speed_mm), 
+            mean_SD_plus = mean + (mean - SD),
+            mean_SD_minus = mean - (mean - SD)) %>%
+  ggplot(., aes(x=datetime, y=mean, color=sex)) +
+  geom_line() +
+  #geom_errorbar(aes(ymin=mean_SD_minus, ymax=mean_SD_plus), width=.2,
+  #              position=position_dodge(0))
+
+
+
+avg.day.combined_summar <-
+  as.data.frame(
+  avg.day.combined %>%
+  group_by(datetime, sex) %>%
+  summarise(mean = mean(mean_speed_mm), SD=sd(mean_speed_mm), 
+            mean_SD_plus = mean + (mean - SD),
+            mean_SD_minus = mean - (mean - SD))
+  )
+
+avg.day.combined_summar %>%
+  ggplot(., aes(x=datetime, y=mean, color=sex)) +
+  geom_line() +
+  geom_line(aes(y=mean_SD_minus, color=sex, alpha=0.5)) +
+  geom_line(aes(y=mean_SD_plus, color=sex, alpha=0.5)) 
+
+
+
+
+
+
+
+
+
+mean=mean(value), sd=sd(value)
+
+
+
+
+
+
+
