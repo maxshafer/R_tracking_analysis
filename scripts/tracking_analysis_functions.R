@@ -154,7 +154,7 @@ averageDay <- function(als_data = als_data, units = c("second", "minute", "halfh
 ## These functions add colours based on the time of day to a ggplot
 
 shade_colours <- function(x = x, ...) {
-  scale_fill_manual(values = c("night" = "grey", "dawn" = "yellow", "day" = "white", "dusk" = "yellow"))
+  scale_fill_manual(values = c("night" = "grey", "dawn" = "yellow", "day" = "white", "dusk" = "yellow", "dark_dark" = "grey85"))
 }
 
 geom_rect_shading_bz <- function(new_bz_times = TRUE, ...) {
@@ -222,6 +222,49 @@ geom_rect_shading_bz_7days <- function(new_bz_times = TRUE, ...) {
   geom_rect(data = rects, aes(ymin=-Inf, ymax=Inf, xmin=xstart, xmax=xend, fill=col), alpha =0.5, inherit.aes = FALSE)
 }
 
+geom_rect_shading_bz_7days_darkdark <- function(new_bz_times = TRUE, ...) {
+  rects_day_newbz <- data.frame(xstart = c(as.POSIXct("1970-01-01 00:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"), 
+                                           as.POSIXct("1970-01-01 08:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                           as.POSIXct("1970-01-01 08:30:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                           as.POSIXct("1970-01-01 21:30:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                           as.POSIXct("1970-01-01 22:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT")), 
+                                xend = c(as.POSIXct("1970-01-01 07:59:59", '%Y-%m-%d %H:%M:%S', tz = "GMT"), 
+                                         as.POSIXct("1970-01-01 08:29:59", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                         as.POSIXct("1970-01-01 21:59:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                         as.POSIXct("1970-01-01 21:59:59", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                         as.POSIXct("1970-01-01 23:59:59", '%Y-%m-%d %H:%M:%S', tz = "GMT")), 
+                                col = c("night",
+                                        "dawn",
+                                        "day",
+                                        "dusk",
+                                        "night"))
+  
+  rects_day_newbz_darkdark <- data.frame(xstart = c(as.POSIXct("1970-01-01 00:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"), 
+                                           as.POSIXct("1970-01-01 08:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                           as.POSIXct("1970-01-01 08:30:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                           as.POSIXct("1970-01-01 21:30:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                           as.POSIXct("1970-01-01 22:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT")), 
+                                xend = c(as.POSIXct("1970-01-01 07:59:59", '%Y-%m-%d %H:%M:%S', tz = "GMT"), 
+                                         as.POSIXct("1970-01-01 08:29:59", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                         as.POSIXct("1970-01-01 21:59:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                         as.POSIXct("1970-01-01 21:59:59", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
+                                         as.POSIXct("1970-01-01 23:59:59", '%Y-%m-%d %H:%M:%S', tz = "GMT")), 
+                                col = c("night",
+                                        "dawn",
+                                        "dark_dark",
+                                        "dusk",
+                                        "night"))
+  
+  rects <- Reduce(rbind, list(rects_day_newbz, rects_day_newbz, rects_day_newbz, rects_day_newbz, rects_day_newbz_darkdark, rects_day_newbz_darkdark, rects_day_newbz_darkdark, rects_day_newbz_darkdark))
+  rects$xstart <- as.POSIXct(rects$xstart, '%Y-%m-%d %H:%M:%S', tz = "GMT", origin = "1970-01-01 00:00:00")
+  rects$xend <- as.POSIXct(rects$xend, '%Y-%m-%d %H:%M:%S', tz = "GMT", origin = "1970-01-01 00:00:00")
+  day(rects$xstart) <- c(rep(01, 5), rep(02, 5), rep(03, 5), rep(04, 5), rep(05, 5), rep(06, 5), rep(07, 5), rep(08, 5))
+  day(rects$xend) <- c(rep(01, 5), rep(02, 5), rep(03, 5), rep(04, 5), rep(05, 5), rep(06, 5), rep(07, 5), rep(08, 5))
+  rects <- rects[5:36,]
+  
+  geom_rect(data = rects, aes(ymin=-Inf, ymax=Inf, xmin=xstart, xmax=xend, fill=col), alpha =0.5, inherit.aes = FALSE)
+}
+
 geom_rect_shading_zoo_7days <- function(zoological_times = FALSE, ...) {
   rects_day_zoo <- data.frame(xstart = c(as.POSIXct("1970-01-01 00:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"), 
                                          as.POSIXct("1970-01-01 07:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
@@ -239,7 +282,7 @@ geom_rect_shading_zoo_7days <- function(zoological_times = FALSE, ...) {
                                       "dusk",
                                       "night"))
   
-  rects <- Reduce(rbind, list(rects_day_newbz, rects_day_newbz, rects_day_newbz, rects_day_newbz, rects_day_newbz, rects_day_newbz, rects_day_newbz, rects_day_newbz))
+  rects <- Reduce(rbind, list(rects_day_zoo, rects_day_zoo, rects_day_zoo, rects_day_zoo, rects_day_zoo, rects_day_zoo, rects_day_zoo, rects_day_zoo))
   rects$xstart <- as.POSIXct(rects$xstart, '%Y-%m-%d %H:%M:%S', tz = "GMT", origin = "1970-01-01 00:00:00")
   rects$xend <- as.POSIXct(rects$xend, '%Y-%m-%d %H:%M:%S', tz = "GMT", origin = "1970-01-01 00:00:00")
   day(rects$xstart) <- c(rep(01, 5), rep(02, 5), rep(03, 5), rep(04, 5), rep(05, 5), rep(06, 5), rep(07, 5), rep(08, 5))
