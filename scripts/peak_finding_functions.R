@@ -80,3 +80,55 @@ returnPeakPercentages <- function(als_data = als_data, zoo_times = FALSE, avg_da
   names(output) <- c("dawn", "dusk")
   return(output)
 }
+
+## What about hte prominences?
+returnPeakProminences <- function(als_data = als_data, zoo_times = FALSE, avg_days = FALSE) {
+  
+  dawn_intervals <- list()
+  dusk_intervals <- list()
+  
+  if(zoo_times) {
+    for (i in 02:08) {
+      dawn_intervals[[i]] <- interval(as.POSIXct(paste("1970-01-", i, " 06:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-", i, " 07:30:00", sep = ""), tz = "GMT"))
+      dusk_intervals[[i]] <- interval(as.POSIXct(paste("1970-01-", i, " 18:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-", i, " 19:30:00", sep = ""), tz = "GMT"))
+    }
+  } else {
+    for (i in 02:08) {
+      dawn_intervals[[i]] <- interval(as.POSIXct(paste("1970-01-", i, " 07:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-", i, " 08:30:00", sep = ""), tz = "GMT"))
+      dusk_intervals[[i]] <- interval(as.POSIXct(paste("1970-01-", i, " 21:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-", i, " 22:30:00", sep = ""), tz = "GMT"))
+    }
+  }
+  
+  dawn_intervals <- dawn_intervals[2:8]
+  dusk_intervals <- dusk_intervals[2:8]
+  
+  if (avg_days) {
+    dawn_intervals <- list()
+    dusk_intervals <- list()
+    
+    if (zoo_times) {
+      dawn_intervals[[1]] <- interval(as.POSIXct(paste("1970-01-01 06:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-01 07:30:00", sep = ""), tz = "GMT"))
+      dusk_intervals[[1]] <- interval(as.POSIXct(paste("1970-01-01 18:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-01 19:30:00", sep = ""), tz = "GMT"))
+    } else {
+      dawn_intervals[[1]] <- interval(as.POSIXct(paste("1970-01-01 07:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-01 08:30:00", sep = ""), tz = "GMT"))
+      dusk_intervals[[1]] <- interval(as.POSIXct(paste("1970-01-01 21:00:00", sep = ""), tz = "GMT"), as.POSIXct(paste("1970-01-01 22:30:00", sep = ""), tz = "GMT"))
+    }
+  }
+  
+  # Calculate TRUE/FALSE for each interval
+  dawn_proms <- lapply(dawn_intervals, function(x) {
+    df <- als_data[als_data$peaks == "yes",]
+    output <- df$peak_prominence[df$datetime %within% x]
+    return(output)
+  })
+  
+  dusk_proms <- lapply(dusk_intervals, function(x) {
+    df <- als_data[als_data$peaks == "yes",]
+    output <- df$peak_prominence[df$datetime %within% x]
+    return(output)
+  })
+  
+  output <- list(dawn_proms, dusk_proms)
+  names(output) <- c("dawn", "dusk")
+  return(output)
+}
