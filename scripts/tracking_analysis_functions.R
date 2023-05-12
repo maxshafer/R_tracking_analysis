@@ -161,7 +161,7 @@ shade_colours <- function(x = x, ...) {
 ### For a 7 day week, we actually have data typically across 8 days (Wed - Tues + Wednesday), hence the default value
 ### date_time_shade = c("1970-01-05 02:30:00", "1970-01-05 03:30:00", "light_pulse")
 
-geom_rect_shading_bz_Ndays <- function(new_bz_times = TRUE, n_days = 8, date_time_shade = FALSE, ...) {
+geom_rect_shading_bz_Ndays <- function(new_bz_times = TRUE, n_days = 8, date_time_shade = NA, ...) {
   
   rects_day_newbz <- data.frame(xstart = c(as.POSIXct("1970-01-01 00:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"), 
                                            as.POSIXct("1970-01-01 08:00:00", '%Y-%m-%d %H:%M:%S', tz = "GMT"),
@@ -189,7 +189,9 @@ geom_rect_shading_bz_Ndays <- function(new_bz_times = TRUE, n_days = 8, date_tim
   day(rects$xstart) <- as.numeric(sort(rep(ndays, 5)))
   day(rects$xend) <- as.numeric(sort(rep(ndays, 5)))
   
-  rects <- rects[5:36,]
+  if(n_days > 1){
+    rects <- rects[5:36,]
+  }
   
   ## Add date_time_shade
   

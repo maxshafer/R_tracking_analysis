@@ -128,33 +128,17 @@ treatment_2 <- treatment %>% group_by(SPECIES, TREATMENT, TIME, daytime) %>% sum
 
 ### Add ribbons for SDs
 
-baseline_plot <- ggplot(baseline_2, aes(x = daytime, y = mean_speed_mm, group = interaction(TREATMENT), color = TREATMENT)) + geom_rect_shading_bz() + geom_ribbon(aes(ymin = mean_speed_mm-sd_speed_mm, ymax = mean_speed_mm+sd_speed_mm, fill = TREATMENT), alpha = 0.1) + shade_colours() + geom_point(size = 1) + geom_line(alpha = 0.5) + theme_classic()
-baseline_plot + facet_wrap(~TIME+SPECIES, ncol = 2, scales = "free_y") + scale_color_manual(values = c("black", "red","black", "red"))
+dts <- data.frame(xstart = c("1970-01-01 10:00:00"), xend = c("1970-01-01 10:30:00"), col = c("injection"))
 
 
-
-baseline_plot <- ggplot(baseline_2, aes(x = daytime, y = mean_speed_mm, group = interaction(TREATMENT), color = TREATMENT)) + geom_rect_shading_bz() + shade_colours() + geom_point(size = 1) + geom_line(alpha = 0.5) + theme_classic()
+baseline_plot <- ggplot(baseline_2, aes(x = daytime, y = mean_speed_mm, group = interaction(TREATMENT), color = TREATMENT)) + geom_rect_shading_bz_Ndays(n_days = 1) + geom_ribbon(aes(ymin = mean_speed_mm-sd_speed_mm, ymax = mean_speed_mm+sd_speed_mm, fill = TREATMENT), alpha = 0.1) + shade_colours() + geom_point(size = 1) + geom_line(alpha = 0.5) + theme_classic()
 baseline_plot <- baseline_plot + facet_wrap(~TIME+SPECIES, ncol = 2, scales = "free_y") + scale_color_manual(values = c("black", "red","black", "red"))
 
-treatment_plot <- ggplot(treatment_2, aes(x = daytime, y = mean_speed_mm, group = interaction(TREATMENT), color = TREATMENT)) + geom_rect_shading_bz() + shade_colours() + geom_point(size = 1) + geom_line(alpha = 0.5) + theme_classic()
+treatment_plot <- ggplot(treatment_2, aes(x = daytime, y = mean_speed_mm, group = interaction(TREATMENT), color = TREATMENT)) + geom_rect_shading_bz_Ndays(n_days = 1, date_time_shade = dts) + geom_ribbon(aes(ymin = mean_speed_mm-sd_speed_mm, ymax = mean_speed_mm+sd_speed_mm, fill = TREATMENT), alpha = 0.1) + shade_colours() + geom_point(size = 1) + geom_line(alpha = 0.5) + theme_classic()
 treatment_plot <- treatment_plot + facet_wrap(~TIME+SPECIES, ncol = 2, scales = "free_y") + scale_color_manual(values = c("black", "red","black", "red"))
 
 baseline_plot + treatment_plot
 
-## Then plot
-plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, group = interaction(TREATMENT, TIME, SPECIES), color = interaction(TREATMENT, TIME))) + geom_rect_shading_bz_7days_darkdark() + shade_colours() + geom_point(size = 1) + geom_line(alpha = 0.5) + theme_classic()
-
-ave.all.7days <- plot + shade_colours() + facet_wrap(~TIME+SPECIES, ncol = 1, scales = "free_y") + scale_color_manual(values = c("black", "red","black", "red"))
-
-
-
-
-
-
-## Then plot
-plot <- ggplot(week.combined, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = interaction(species_full, treatment))) + geom_rect_shading_bz_7days_darkdark() + shade_colours() + geom_point(size = 1, alpha = 0.5) + geom_line(alpha = 0.5) + theme_classic()
-
-ave.all.7days <- plot + shade_colours() + facet_wrap(~species_full*treatment, ncol = 1, scales = "free_y")
 
 
 
