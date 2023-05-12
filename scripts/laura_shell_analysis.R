@@ -8,8 +8,9 @@ library(dplyr)
 
 source("/Volumes/BZ/Scientific Data/RG-AS04-Data01/R_tracking_analysis/scripts/tracking_analysis_functions.R")
 
+
 ## Set the directory to the '_analysis2' folder, or wherever all of the als files are located
-setwd("/Volumes/BZ/Scientific Data/RG-AS04-Data01/LCP/_analysis_Neomul_shell/")
+setwd("/Volumes/BZ/Scientific Data/RG-AS04-Data01/LCP/_analysis/")
 
 ##################################################################################################
 ####### LOAD IN GOOGLE SHEET DATA #######
@@ -21,6 +22,7 @@ setwd("/Volumes/BZ/Scientific Data/RG-AS04-Data01/LCP/_analysis_Neomul_shell/")
 url <- 'https://docs.google.com/spreadsheets/d/1IU6dzH7gYW5OgLho26Nu9IfQ9D4nIqGG4y6XEY0fAH8/edit?usp=sharing'
 meta_data <- read.csv(text=gsheet2text(url, format='csv'), stringsAsFactors=FALSE)
 
+
 # You can use 'dim()' or 'head()' to quickly examine the results dataframe to see if it's correct
 dim(meta_data)
 head(meta_data)
@@ -29,11 +31,12 @@ head(meta_data)
 ######## COMMANDS FOR MULTIPLE DATASETS & ADDING META_DATA & PLOTTING ########
 ##################################################################################################
 
+als.files <- list.files(path = ".", recursive = TRUE, pattern = "als.csv")
 # This imports a list of files
-# als.data.list <- lapply(als.files, function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
+als.data.list <- lapply(als.files, function(x) loadALSfiles(path_to_file = x, average_by = "minute"))
 
 ## Can then save out the files for re-use
-# saveRDS(als.data.list, file = "als_data_list.rds")
+saveRDS(als.data.list, file = "als_data_list.rds")
 
 als.data.list <- readRDS("als_data_list.rds")
 
@@ -42,6 +45,7 @@ avg.day.list <- lapply(als.data.list, function(x) averageDay(als_data = x, units
 
 # Reduce the list into one dataframe
 avg.day.combined <- Reduce(rbind, avg.day.list)
+
 
 # Add meta_data
 avg.day.combined <- merge(avg.day.combined, meta_data, by = "sample_id")
@@ -63,7 +67,7 @@ plot + scale_colour_manual(values = c("black", "red"))
 
 ## Use 'facet_wrap' to separate based on columns in meta_data
 ## works like an equation ~ means 'by', and you can use addition ('shell+strain' or 'strain+conspecifics')
-plot + shade_colours() + facet_wrap(~strain+shell+conspecifics, ncol = 2)
+plot + shade_colours() + facet_wrap(~strain+shell+conspecifics, ncol = 4)
 
 
 
@@ -87,7 +91,7 @@ dev.off()
 
 
 ##################################################################################################
-#### averages individual behaviours by meta_data ####
+#### averages individual behaviour by meta_data ####
 ##################################################################################################
 
 test <- avg.day.combined %>% group_by(sex, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
@@ -107,51 +111,32 @@ ave.all <- plot + shade_colours() + facet_wrap(~strain+conspecifics+shell)
 
 ave.all_by_sex <- ave.all + 
   scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + 
-  scale_colour_manual(values = c("black", "red")) 
+  scale_colour_manual(values = c("red", "black")) 
 
 ave.all_by_sex
 
-### save as png
-  
-png(file = "outputs/bio23.png", width = 15, height = 10, res = 500,units = "in")
-ave.all_by_sex
-dev.off()
 
+###########################################################
+### get median and the min and max values of the individuals
+##########################################################
 
+#get median
 
+median_matrix<-avg.day.combined %>% group_by(sex, strain, shell, conspecifics, datetime) %>% summarize(value = median(as.numeric(mean_speed_mm), na.rm = TRUE)) 
+max_matrix<-avg.day.combined %>% group_by(sex, strain, shell, conspecifics, datetime) %>% summarize(value = max(as.numeric(mean_speed_mm), na.rm = TRUE)) 
+min_matrix<-avg.day.combined %>% group_by(sex, strain, shell, conspecifics, datetime) %>% summarize(value = min(as.numeric(mean_speed_mm), na.rm = TRUE)) 
 
+dat <- rbind(median_matrix,max_matrix,min_matrix)
+dat$grp <- rep(factor(1:3),times=c(nrow(median_matrix),nrow(max_matrix),nrow(min_matrix)))
 
+ggplot(dat,aes(x=datetime,y=value,group=grp,color=sex)) + geom_line() + facet_wrap(~strain+conspecifics+shell)
 
-## test to put the standard deviation (does not take on the colours of the sex!!)
-
-
-test_1 <- 
-  avg.day.combined %>% 
-  group_by(datetime, sex, strain, shell, conspecifics, hour, half_hour) %>% 
-  mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt),
-            mean = mean(mean_speed_mm), SD=sd(mean_speed_mm), 
-            mean_SD_plus = mean + (mean - SD),
-            mean_SD_minus = mean - (mean - SD))
-
-
-plot <- ggplot(test_1, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
-  geom_rect_shading_bz() + shade_colours() + geom_point(size = 0.75) + geom_line() + theme_classic()
-
-plot <- ggplot(test_1, aes(x = datetime, y = mean_speed_mm, ymin=mean_SD_minus, ymax=mean_SD_plus, fill=sex, group = sex, color = sex)) + 
-  geom_line() + 
-  geom_ribbon(alpha=0.5) +
-  shade_colours(fill=sex) + 
-  geom_point(size = 0.75) +
-  theme_classic()
-
-ave.all <- plot + shade_colours() + facet_wrap(~strain+conspecifics+shell)
-
-ave.all_by_sex <- ave.all + 
-  scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + 
-  scale_colour_manual(values = c("black", "red")) 
-ave.all_by_sex
-
-
+ggplot()  + geom_rect_shading_bz() + shade_colours() + 
+  geom_line(data=median_matrix,aes(x=datetime,y=value,color=sex),size=1) + 
+  geom_line(data=max_matrix,aes(x=datetime,y=value,color=sex),size=0.3) + 
+  geom_line(data=min_matrix,aes(x=datetime,y=value,color=sex),size=0.3) + 
+  facet_wrap(~strain+conspecifics+shell) + scale_colour_manual(values = c("red", "black")) + 
+  scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + theme_classic()
 
 
 ##################################################################################################
@@ -176,7 +161,7 @@ week.combined <- Reduce(rbind, als.data.list)
 week.combined <- merge(week.combined, meta_data, by = "sample_id")
 
 # averages by groupings
-test_2 <- week.combined %>% group_by(sex, strain, shell, conspecifics, hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+test_2 <- week.combined %>% group_by(sex,shell, conspecifics, hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
 ## Then plot
 plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz_7days() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
@@ -187,7 +172,7 @@ ave.all.7days <- plot + shade_colours() + facet_wrap(~strain+shell+conspecifics,
 ##################################################################################################
 ###### Save plots in chosen folder ########
 ##################################################################################################
-
+ 
 pdf(file = "outputs/file_name.pdf", width = 20, height = 10)
 ave.all
 dev.off()
@@ -225,8 +210,9 @@ avg.day_last3 <- averageDay(als_data = als.data.2, units = "halfhour", days_incl
 # Can you '+ geom_rect_shading_bz' or '+ geom_rect_shading_zoo' to add shading based on times
 # Colours can be specified with '+ shade_colours()' which uses grey/yellow/white colour scheme (can make your own)
 
-ggplot(avg.day_first3, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line()
-ggplot(avg.day_last3, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line()
+
+p1 <- ggplot(avg.day_first3, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line()
+p2 <- ggplot(avg.day_last3, aes(x = datetime, y = mean_speed_mm)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line()
 
 ggplot(als.data.2, aes(x = datetime, y = mean_speed_mm)) + 
   geom_rect_shading_bz_7days() + shade_colours() + geom_point(size = 0.75) + 
@@ -241,83 +227,5 @@ dev.off()
 
 
 
-
-
-######## test maxime to put standard deviation (multiple geom_lines)
-
-
-avg.day.combined %>%
-  group_by(datetime, sex) %>%
-  summarise(mean = mean(mean_speed_mm), SD=sd(mean_speed_mm), 
-            mean_SD_plus = mean + (mean - SD),
-            mean_SD_minus = mean - (mean - SD)) %>%
-  ggplot(., aes(x=datetime, y=mean, color=sex)) +
-  geom_line() 
-  #geom_errorbar(aes(ymin=mean_SD_minus, ymax=mean_SD_plus), width=.2,
-  #              position=position_dodge(0))
-
-
-
-avg.day.combined_summar <-
-  as.data.frame(
-  avg.day.combined %>%
-  group_by(datetime, sex) %>%
-  summarise(mean = mean(mean_speed_mm), SD=sd(mean_speed_mm), 
-            mean_SD_plus = mean + (mean - SD),
-            mean_SD_minus = mean - (mean - SD))
-  )
-
-avg.day.combined_summar %>%
-  ggplot(., aes(x=datetime, y=mean, color=sex)) +
-  geom_line() +
-  geom_line(aes(y=mean_SD_minus, color=sex, alpha=0.5)) +
-  geom_line(aes(y=mean_SD_plus, color=sex, alpha=0.5)) 
-
-
-
-avg.day.combined_summar %>%
-  ggplot(., aes(x=datetime, y=mean, color=sex)) +
-  geom_line() +
-  stat_summary(fun.data = "mean_sdl",
-               fun.args= list(mult = 1),
-               geom= "smooth",
-               se=TRUE)
-
-ggplot(data=avg.day.combined_summar, aes(x=datetime, y=mean, ymin=mean_SD_minus, ymax=mean_SD_plus, fill=sex, color=sex)) + 
-  geom_line() + 
-  geom_ribbon(alpha=0.5) 
-
-
-
-
-####### Laura try standard deviation
-
-p <-avg.day.combined[avg.day.combined$strain == "AS",]
-p1 <- p[p$conspecifics == 'n',]    
-p2 <- p1[p1$shell == 'n',]  
-
-t <- p2 %>% 
-  group_by(sex, hour, half_hour) %>% 
-  mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
-
-avg.day.combined_summar <-
-  as.data.frame(
-    t %>%
-      group_by(datetime, sex) %>%
-      summarise(mean = mean(mean_speed_mm), SD=sd(mean_speed_mm), 
-                mean_SD_plus = mean + (mean - SD),
-                mean_SD_minus = mean - (mean - SD))
-  )
-
-
-AS.nc.ns <- ggplot(data=avg.day.combined_summar, aes(x=datetime, y=mean, ymin=mean_SD_minus, ymax=mean_SD_plus, fill=sex, color=sex)) + 
-  geom_line() + 
-  geom_ribbon(alpha=0.5) 
-  
-AS.nc.ns
-
-# png(file = "outputs/AS_nc_ns.png", width = 10, height = 9, res = 500,units = "in")
-# AS.nc.ns
-# dev.off()
 
 
