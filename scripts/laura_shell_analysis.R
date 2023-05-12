@@ -290,9 +290,34 @@ ggplot(data=avg.day.combined_summar, aes(x=datetime, y=mean, ymin=mean_SD_minus,
 
 
 
+####### Laura try standard deviation
+
+p <-avg.day.combined[avg.day.combined$strain == "AS",]
+p1 <- p[p$conspecifics == 'n',]    
+p2 <- p1[p1$shell == 'n',]  
+
+t <- p2 %>% 
+  group_by(sex, hour, half_hour) %>% 
+  mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+
+avg.day.combined_summar <-
+  as.data.frame(
+    t %>%
+      group_by(datetime, sex) %>%
+      summarise(mean = mean(mean_speed_mm), SD=sd(mean_speed_mm), 
+                mean_SD_plus = mean + (mean - SD),
+                mean_SD_minus = mean - (mean - SD))
+  )
 
 
+AS.nc.ns <- ggplot(data=avg.day.combined_summar, aes(x=datetime, y=mean, ymin=mean_SD_minus, ymax=mean_SD_plus, fill=sex, color=sex)) + 
+  geom_line() + 
+  geom_ribbon(alpha=0.5) 
+  
+AS.nc.ns
 
-
+# png(file = "outputs/AS_nc_ns.png", width = 10, height = 9, res = 500,units = "in")
+# AS.nc.ns
+# dev.off()
 
 
