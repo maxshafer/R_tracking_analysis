@@ -75,12 +75,12 @@ week.combined <- Reduce(rbind, als.data.list.2)
 week.combined <- merge(week.combined, meta_data, by = "sample_id")
 
 # averages by groupings
-test_2 <- week.combined %>% group_by(species_six, half_hour, day) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+test_2 <- week.combined %>% group_by(species_six, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
 ## Then plot
-plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, group = species_six, color = species_six)) + geom_rect_shading_bz_7days() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
+plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, group = species_six, color = species_six)) + geom_rect_shading_zoo() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
 
-ggplot(test_2[test_2$species_six == "Cyplep",], aes(x = datetime, y = mean_speed_mm, group = species_six, color = species_six)) + geom_rect_shading_bz_7days() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
+plot <- ggplot(test_2[test_2$species_six %in% c("Xenspi", "Gnapfe", "Petpol", "Cyplep", "Loblab", "Neopul-daffodil", "Ophboo"),], aes(x = datetime, y = mean_speed_mm, group = species_six, color = species_six)) + geom_rect_shading_zoo() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
 
 ave.all.7days <- plot + shade_colours() + facet_wrap(~species_six, scales = "free_y")
 
