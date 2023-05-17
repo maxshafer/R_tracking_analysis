@@ -16,28 +16,23 @@ source("/Volumes/BZ/Scientific Data/RG-AS04-Data01/R_tracking_analysis/scripts/p
 ####### IDENTIFY THE FILES FOR IMPORT #######
 
 ## Set the directory to the '_analysis2' folder, or wherever all of the als files are located
-setwd("/Volumes/BZ/Scientific Data/RG-AS04-Data01/Cichlid_sleep_videos/light_perturb/FISH20230324/")
+setwd("/Volumes/BZ/Scientific Data/RG-AS04-Data01/Cichlid_sleep_videos/melatonin_exps/")
 
 # List the files in the current directory that are als files
 # This also finds the original runs for brichardi and crassus which have been transferred
 # These need to be analysed differently (different times)
 als.files <- list.files(path = ".", recursive = TRUE, pattern = "als.csv")
 
+# load meta data from google sheet
+url <- 'https://docs.google.com/spreadsheets/d/19SWcIXumBUqvhEZzIzzMZKFtCcRxNbxWwmaQlmhOiIg/edit?usp=sharing'
+meta_data <- read.csv(text=gsheet2text(url, format='csv', sheetid = 726571573), stringsAsFactors=FALSE)
+meta_data$sample_id <- paste("FISH", meta_data$DATE, "_", meta_data$CAMERA, "_", meta_data$ROI, sep = "")
 
-### Make meta data from file names ###
-
-meta_data <- as.data.frame(str_split_fixed(als.files, "_", 6))
-colnames(meta_data) <- c("date", "camera", "roi", "species_full", "sex", "csv")
-meta_data$sample_id <- paste(meta_data$date, meta_data$camera, meta_data$roi, sep = "_")
-
-meta_data$species_full <- str_replace(meta_data$species_full, "-Neolamprologus-tretocephalus", "Neolamprologus-tretocephalus")
-
-## Add melatonin
-
-meta_data$treatment <- ifelse(meta_data$camera %in% c("c2", "c7"), "control-ethanol", "melatonin")
 
 #######################################################################################################################
 ####### RUN THE COMMANDS TO IMPORT DATA ###############################################################################
+####### & REMOVE HALF HOUR DURING ADMINISTRATION ######################################################################
+####### & CORRECT DAYLIGHT SAVINGS ####################################################################################
 #######################################################################################################################
 
 # This imports a list of files
@@ -45,8 +40,20 @@ als.data.list <- lapply(als.files, function(x) loadALSfiles(path_to_file = x, av
 
 names(als.data.list) <- als.files
 
-als.data.list.2 <- lapply(als.data.list, function(x) summariseALSdata(als_data = x, average_by = "halfhour"))
+## The computer was on regular time, but the lights and fish were on daylight savings time still, so I need to remove an hour? Or there is a jump
 
+## Melatonin was inject between 9h00 - 9h30  on day 5 and 6 (jan 5th and 6th), therefore tracking doesn't work during this window
+## and tracks should be ignored. Maybe do +/- 5-10 mins to be safe
+
+als.data.list.2 <- lapply(als.data.list, function(als) {
+  als$mean_speed_mm[als$day %in% c(5,6,7) & als$hour == 9 & als$minute < 30] <- NA
+  return(als)
+})
+
+
+
+
+als.data.list.2 <- lapply(als.data.list.2, function(x) summariseALSdata(als_data = x, average_by = "halfhour"))
 
 #######################################################################################################################
 ####### MAKE PLOTS FOR INDIVIDUAL FISH ################################################################################
@@ -103,20 +110,35 @@ week.combined <- Reduce(rbind, als.data.list.2)
 # Add meta_data
 week.combined <- merge(week.combined, meta_data, by = "sample_id")
 
+baseline <- week.combined[week.combined$day %in% c(1,2,3,4),]
+baseline$daytime <- as.POSIXct(baseline$half_hour, format = '%Y-%m-%d %H:%M:%S')
+day(baseline$daytime) <- 1
+
+treatment <- week.combined[week.combined$day %in% c(5,6,7,8),]
+treatment$daytime <- as.POSIXct(treatment$half_hour, format = '%Y-%m-%d %H:%M:%S')
+day(treatment$daytime) <- 1
+
 # averages by groupings
-test_2 <- week.combined %>% group_by(species_full, treatment, half_hour, day) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+test_2 <- week.combined %>% group_by(SPECIES, TREATMENT, TIME, half_hour, day) %>% mutate(sd_speed_mm = sd(mean_speed_mm), mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
-## Then plot
-plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, group = interaction(treatment, species_full), color = treatment)) + geom_rect_shading_bz_7days_darkdark() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
+# averages by groupings and days
 
-ave.all.7days <- plot + shade_colours() + facet_wrap(~species_full, ncol = 1, scales = "free_y")
+baseline_2 <- baseline %>% group_by(SPECIES, TREATMENT, TIME, daytime) %>% summarise(sd_speed_mm = sd(mean_speed_mm), mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+treatment_2 <- treatment %>% group_by(SPECIES, TREATMENT, TIME, daytime) %>% summarise(sd_speed_mm = sd(mean_speed_mm), mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+
+### Add ribbons for SDs
+
+dts <- data.frame(xstart = c("1970-01-01 10:00:00"), xend = c("1970-01-01 10:30:00"), col = c("injection"))
 
 
+baseline_plot <- ggplot(baseline_2, aes(x = daytime, y = mean_speed_mm, group = interaction(TREATMENT), color = TREATMENT)) + geom_rect_shading_bz_Ndays(n_days = 1) + geom_ribbon(aes(ymin = mean_speed_mm-sd_speed_mm, ymax = mean_speed_mm+sd_speed_mm, fill = TREATMENT), alpha = 0.1) + shade_colours() + geom_point(size = 1) + geom_line(alpha = 0.5) + theme_classic()
+baseline_plot <- baseline_plot + facet_wrap(~TIME+SPECIES, ncol = 2, scales = "free_y") + scale_color_manual(values = c("black", "red","black", "red"))
 
-## Then plot
-plot <- ggplot(week.combined, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = interaction(species_full, treatment))) + geom_rect_shading_bz_7days_darkdark() + shade_colours() + geom_point(size = 1, alpha = 0.5) + geom_line(alpha = 0.5) + theme_classic()
+treatment_plot <- ggplot(treatment_2, aes(x = daytime, y = mean_speed_mm, group = interaction(TREATMENT), color = TREATMENT)) + geom_rect_shading_bz_Ndays(n_days = 1, date_time_shade = dts) + geom_ribbon(aes(ymin = mean_speed_mm-sd_speed_mm, ymax = mean_speed_mm+sd_speed_mm, fill = TREATMENT), alpha = 0.1) + shade_colours() + geom_point(size = 1) + geom_line(alpha = 0.5) + theme_classic()
+treatment_plot <- treatment_plot + facet_wrap(~TIME+SPECIES, ncol = 2, scales = "free_y") + scale_color_manual(values = c("black", "red","black", "red"))
 
-ave.all.7days <- plot + shade_colours() + facet_wrap(~species_full*treatment, ncol = 1, scales = "free_y")
+baseline_plot + treatment_plot
+
 
 
 
