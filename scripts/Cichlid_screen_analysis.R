@@ -61,6 +61,18 @@ als.data.list <- readRDS(file = "/Volumes/BZ/Scientific Data/RG-AS04-Data01/Cich
 
 als.data.list.2 <- lapply(als.data.list, function(x) summariseALSdata(als_data = x, average_by = "halfhour"))
 
+
+
+
+
+
+test_2 <- week.combined %>% group_by(species_six, hour) %>% summarise(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+
+test_2$day_night <- ifelse(test_2$hour > 7 & test_2$hour < 21, "day", ifelse(test_2$hour %in% c(6,7,21,22), "crepuscular", "night"))
+
+ggplot(test_2, aes(x = interaction(day_night,species_six), y = mean_speed_mm, group = interaction(species_six, day_night), colour = day_night)) + geom_boxplot() + facet_wrap(~species_six, scales = "free") + theme(legend.position = "none")
+
+
 #######################################################################################################################
 ####### MAKE PLOTS FOR COMBINED #######################################################################################
 #######################################################################################################################
@@ -75,7 +87,8 @@ week.combined <- Reduce(rbind, als.data.list.2)
 week.combined <- merge(week.combined, meta_data, by = "sample_id")
 
 # averages by groupings
-test_2 <- week.combined %>% group_by(species_six, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+test_2 <- week.combined %>% group_by(species_six, day) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+test_2 <- week.combined %>% group_by(species_six, day) %>% summarise(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
 ## Then plot
 plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, group = species_six, color = species_six)) + geom_rect_shading_zoo() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
