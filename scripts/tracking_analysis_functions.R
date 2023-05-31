@@ -45,10 +45,10 @@ loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "min
   toc()
   
   ## Now need to convert back to a datetime
-  if (average_by == "hour") { summarised$datetime <- paste("1970-01-0", summarised$day, " ", summarised$hour, ":00", ":00", sep = "") }
+  if (average_by == "hour") { summarised$datetime <- paste("1970-01-", sprintf("%002d", summarised$day), " ", summarised$hour, ":00", ":00", sep = "") }
   if (average_by == "halfhour") { ssummarised$datetime <- summarised$half_hour }
-  if (average_by == "minute") { summarised$datetime <- paste("1970-01-0", summarised$day, " ", summarised$hour, ":", summarised$minute, ":00", sep = "") }
-  if (average_by == "second") { summarised$datetime <- paste("1970-01-0", summarised$day, " ", summarised$hour, ":", summarised$minute, ":", summarised$second, sep = "") }
+  if (average_by == "minute") { summarised$datetime <- paste("1970-01-", sprintf("%002d", summarised$day), " ", summarised$hour, ":", summarised$minute, ":00", sep = "") }
+  if (average_by == "second") { summarised$datetime <- paste("1970-01-", sprintf("%002d", summarised$day), " ", summarised$hour, ":", summarised$minute, ":", summarised$second, sep = "") }
   
   summarised$datetime <- as.POSIXct(summarised$datetime, '%Y-%m-%d %H:%M:%S', tz = "GMT")
   
