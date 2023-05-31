@@ -154,7 +154,7 @@ averageDay <- function(als_data = als_data, units = c("second", "minute", "halfh
 ## These functions add colours based on the time of day to a ggplot
 
 shade_colours <- function(x = x, ...) {
-  scale_fill_manual(values = c("night" = "grey", "dawn" = "yellow", "day" = "white", "dusk" = "yellow", "dark_dark" = "grey85", "light_pulse" = "green", "injection" = "green"), limits = force)
+  scale_fill_manual(values = c("night" = "lightblue", "dawn" = "yellow", "day" = "white", "dusk" = "yellow", "dark_dark" = "grey85", "light_pulse" = "green", "dark_pulse" = "grey40", "injection" = "green"), limits = force)
 }
 
 ### This function should replace all of these, with options for different scenarios
@@ -190,7 +190,7 @@ geom_rect_shading_bz_Ndays <- function(new_bz_times = TRUE, n_days = 8, date_tim
   day(rects$xend) <- as.numeric(sort(rep(ndays, 5)))
   
   if(n_days > 1){
-    rects <- rects[5:36,]
+    rects <- rects[5:nrow(rects),]
   }
   
   ## Add date_time_shade

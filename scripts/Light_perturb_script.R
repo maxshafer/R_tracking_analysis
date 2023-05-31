@@ -15,7 +15,7 @@ source("/Volumes/BZ/Scientific Data/RG-AS04-Data01/R_tracking_analysis/scripts/p
 ####### IDENTIFY THE FILES FOR IMPORT #######
 
 ## Set the directory to the '_analysis2' folder, or wherever all of the als files are located
-setwd("/Volumes/BZ/Scientific Data/RG-AS04-Data01/Cichlid_sleep_videos/light_perturb/")
+setwd("/Volumes/BZ/Scientific Data/RG-AS04-Data01/LCP/FISH20230407")
 
 # List the files in the current directory that are als files
 # This also finds the original runs for brichardi and crassus which have been transferred
@@ -99,17 +99,32 @@ week.combined <- Reduce(rbind, als.data.list.2)
 week.combined <- merge(week.combined, meta_data, by = "sample_id")
 
 # averages by groupings
-test_2 <- week.combined %>% group_by(Species, half_hour, day) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+test_2 <- week.combined %>% group_by(Species, half_hour, day) %>% mutate(sd_speed_mm = sd(mean_speed_mm), mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+
 
 ## Then plot
-plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, group = Species, color = Species)) + geom_rect_shading_bz_7days_darkdark() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
+plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz_7days_darkdark() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
 
-ave.all.7days <- plot + shade_colours() + facet_wrap(~Species, ncol = 1, scales = "free_y")
-
-
+ave.all.7days <- plot + shade_colours() + facet_wrap(~sex, ncol = 1, scales = "free_y")
 
 
 
+### For laura's shell dwellers
+
+test_2 <- week.combined %>% group_by(sex, half_hour, day) %>% mutate(sd_speed_mm = sd(mean_speed_mm), mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
 
+## Then plot
+
+## Days 4 and 5 have pulses
+## I think they need to be shifted a bit, because the way they are averaged and the way these rects are plotted doesn't match?
+dts <- data.frame(xstart = c("1970-01-04 03:00:00", "1970-01-04 15:00:00", "1970-01-05 03:00:00", "1970-01-05 15:00:00", "1970-01-07 00:00:00"), xend = c("1970-01-04 04:00:00", "1970-01-04 16:00:00", "1970-01-05 04:00:00", "1970-01-05 16:00:00", "1970-01-08 23:59:00"), col = c("light_pulse", "dark_pulse", "light_pulse", "dark_pulse", "dark_dark"))
+
+plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 9, date_time_shade = dts) + geom_ribbon(aes(ymin = mean_speed_mm-sd_speed_mm, ymax = mean_speed_mm+sd_speed_mm, color = sex), alpha = 0.1) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
+
+ave.all.7days <- plot + shade_colours() + facet_wrap(~sex, ncol = 1, scales = "free_y")
+
+pdf("light_pulse_experiments_20230407_sex.pdf", width = 25, height = 7.5)
+ave.all.7days
+dev.off()
 
