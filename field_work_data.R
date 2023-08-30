@@ -42,7 +42,18 @@ fw_data %>%
              mapping = aes(x = time, y = value),
              color="red") +
   geom_line(data = fw_mean, 
-            mapping = aes(x = time, y = value, group=1, colour = time))
+            mapping = aes(x = time, y = value, group=1)) + theme_classic()
+
+
+### step3
+# fw_data %>% 
+#  ggplot(mapping = aes(x = time, y = numfish)) + 
+#  geom_boxplot() +
+#  geom_point(data = fw_mean, 
+#             mapping = aes(x = time, y = value),
+#             color="red") +
+#  geom_line(data = fw_mean, 
+#            mapping = aes(x = time, y = value, group=1, colour = time))
 
 ######################## plot by timegroups ##########################
 p <- ggplot(fw_data, aes(x = d_n, y = numfish, group = d_n, color = d_n)) + geom_boxplot() 
