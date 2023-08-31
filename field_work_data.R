@@ -35,15 +35,17 @@ fw_data %>%
              color="red") 
 
 ### step3
-fw_data %>% 
+p<- fw_data %>% 
   ggplot(mapping = aes(x = time, y = numfish)) + 
   geom_boxplot() +
   geom_point(data = fw_mean, 
              mapping = aes(x = time, y = value),
              color="red") +
   geom_line(data = fw_mean, 
-            mapping = aes(x = time, y = value, group=1)) + theme_classic()
-
+            mapping = aes(x = time, y = value, group=1)) +
+  annotate("rect", xmin=c(0,18.25), xmax=c(5.25,24.5), ymin=c(0,0) , ymax=c(380,380), alpha=0.2, fill="3333FF")
+p1 <- p + annotate("rect", xmin=c(5.25,17.75), xmax=c(5.5,18.25), ymin=c(0,0) , ymax=c(380,380), alpha=0.2, fill="gold") + theme_classic()
+p2 <- p1 + annotate("rect", xmin=c(12), xmax=c(15), ymin=c(0,0) , ymax=c(380,380), alpha=0.1, fill="darkolivegreen3")
 
 ### step3
 # fw_data %>% 
