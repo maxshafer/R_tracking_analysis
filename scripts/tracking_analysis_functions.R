@@ -19,6 +19,7 @@ loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "min
   # Load in als files using fread
   tic("als file loaded")
   table <- fread(path_to_file, showProgress = FALSE)
+  table <- table[!(is.na(table$speed_mm)),]
   toc()
   
   # Add datetime
@@ -58,18 +59,18 @@ loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "min
 
   ## Normalize x and y coordinates
   if (normalise %in% c("both", "x")) {
-    summarised$mean_x_nt <- summarised$mean_x_nt/max(summarised$mean_x_nt)
+    summarised$mean_x_nt <- summarised$mean_x_nt/max(summarised$mean_x_nt, na.rm = TRUE)
     if (normalise == "both") {
-      summarised$mean_y_nt <- summarised$mean_y_nt/max(summarised$mean_y_nt)
+      summarised$mean_y_nt <- summarised$mean_y_nt/max(summarised$mean_y_nt, na.rm = TRUE)
     }
   }
   
   if (normalise == "y") {
-    summarised$mean_y_nt <- summarised$mean_y_nt/max(summarised$mean_y_nt)
+    summarised$mean_y_nt <- summarised$mean_y_nt/max(summarised$mean_y_nt, na.rm = TRUE)
   }
   
   # This reverses the order of y_coordiantes (higher numbers in original data are closer to the bottom)
-  summarised$mean_y_nt <- (summarised$mean_y_nt - max(summarised$mean_y_nt))*-1
+  summarised$mean_y_nt <- (summarised$mean_y_nt - max(summarised$mean_y_nt, na.rm = TRUE))*-1
   
   return(summarised)
 }

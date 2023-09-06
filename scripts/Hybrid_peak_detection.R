@@ -7,9 +7,11 @@ library(data.table)
 library(dplyr)
 library(reticulate)
 library(patchwork)
+library(here)
+library(stringr)
 
-source("/Volumes/BZ/Scientific Data/RG-AS04-Data01/R_tracking_analysis/scripts/tracking_analysis_functions.R")
-source("/Volumes/BZ/Scientific Data/RG-AS04-Data01/R_tracking_analysis/scripts/peak_finding_functions.R")
+source(here("scripts/tracking_analysis_functions.R"))
+source(here("scripts/peak_finding_functions.R"))
 
 #######################################################################################################################
 ####### LOAD IN GOOGLE SHEET DATA #####################################################################################
@@ -28,13 +30,10 @@ head(meta_data)
 
 ####### IDENTIFY THE FILES FOR IMPORT #######
 
-## Set the directory to the '_analysis2' folder, or wherever all of the als files are located
-setwd("/Volumes/BZ/Scientific Data/RG-AS04-Data01/Hybrid_sleep_videos/_analysis2/")
-
 # List the files in the current directory that are als files
 # This also finds the original runs for brichardi and crassus which have been transferred
 # These need to be analysed differently (different times)
-als.files <- list.files(path = ".", recursive = TRUE, pattern = "als.csv")
+als.files <- list.files(path = "/Volumes/BZ/Scientific Data/RG-AS04-Data01/Hybrid_sleep_videos/_analysis2/", recursive = TRUE, pattern = "als.csv")
 
 
 #######################################################################################################################
@@ -47,9 +46,9 @@ als.data.list <- lapply(als.files, function(x) loadALSfiles(path_to_file = x, av
 names(als.data.list) <- als.files
 
 ## Can then save out the files for re-use
-saveRDS(als.data.list, file = "als_data_list.rds")
+saveRDS(als.data.list, file = "als_data_list_hybrids.rds")
 
-als.data.list <- readRDS("als_data_list.rds")
+als.data.list <- readRDS("als_data_list_hybrids.rds")
 
 als.data.list.2 <- lapply(als.data.list, function(x) summariseALSdata(als_data = x, average_by = "halfhour"))
 
@@ -171,6 +170,46 @@ cor(all_data$dawn_percentages[all_data$Generation %in% c("F1", "F2", "F3")], all
 #######################################################################################################################
 ####### Make PEAK PLOTS ###############################################################################################
 #######################################################################################################################
+
+summary <- merge(df, meta_data, by = "sample_id")
+summary$plot_gen <- ifelse(summary$Generation %in% c("F1", "F2", "F3"), "F1-F2-F3", summary$Generation)
+summary$plot_gen <- factor(summary$plot_gen, levels = c("P0_BRI", "P0_CRA", "F1-F2-F3"))
+
+## Sort and plot crepuscular percentages
+summary$sample_id <- factor(summary$sample_id, levels = unique(summary$sample_id[with(summary, order(percentages))]))
+plot_crepuscular <- ggplot(summary, aes(x = sample_id, y = percentages, fill = percentages)) + 
+  scale_fill_distiller(palette = "BrBG") +
+  geom_line() + 
+  geom_point(shape = 22, colour = "black", size = 2) + 
+  theme_classic() + 
+  theme(legend.position = "none", axis.text.x = element_blank(), axis.text = element_text(colour = "black")) + 
+  ylab("Crepuscularity") +
+  xlab("Hybrid individuals")
+
+# plot_crepuscular <- plot_crepuscular + facet_wrap(~plot_gen, ncol = 3)
+
+### AND/OR a density plot?
+
+plot_crepuscular_density <- ggplot(summary, aes(y = percentages, group = plot_gen, colour = plot_gen, fill = plot_gen)) + 
+  geom_density(alpha = 0.25) +
+  theme_classic() + 
+  theme(axis.text = element_text(colour = "black")) + 
+  xlab("Density") +
+  ylab("Crepuscularity")
+
+plot_crepuscular_density 
+
+
+
+pdf(file = here("QTL_analysis.pdf"), width = 10, height = 2)
+plot_crepuscular + plot_crepuscular_density + plot_layout(ncol = 2, widths = c(10, 1.5))
+dev.off()
+
+
+
+
+
+
 
 bar_plot_dawn <- ggplot(all_data, aes(x = sample_id, y = dawn_percentages, fill = Generation)) + theme_classic() + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90))
 
