@@ -58,23 +58,205 @@ avg.day.combined <- merge(avg.day.combined, meta_data, by = "sample_id")
 ######### Setting subsets to according dataframe that is wanted #########
 #################################################################################################################
 
-
 ## Then plot
-plot <- ggplot(avg.day.combined, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+# plot <- ggplot(avg.day.combined, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
 
-ggplot(avg.day.combined[avg.day.combined$sex == "m",], aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+# plot <- ggplot(avg.day.combined[avg.day.combined$strain == "K",], aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
 
 
-plot + scale_fill_manual(values = c("night" = "grey", "dawn" = "purple", "day" = "white", "dusk" = "yellow"))
+# plot + scale_fill_manual(values = c("night" = "grey", "dawn" = "gold", "day" = "white", "dusk" = "gold"))
 
-plot + scale_colour_manual(values = c("black", "red"))
+# plot + scale_colour_manual(values = c("black", "red"))
 
 ## Use 'facet_wrap' to separate based on columns in meta_data
 ## works like an equation ~ means 'by', and you can use addition ('shell+strain' or 'strain+conspecifics')
-plot + shade_colours() + facet_wrap(~strain + conspecifics + shell, ncol = 4)
+
+# plot + shade_colours() + facet_wrap(~strain + conspecifics + shell, ncol = 4)
+
+mean_ind <- avg.day.combined %>% group_by(sex, strain, shell, conspecifics, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+
+plot <- ggplot(mean_ind, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+
+ave.all <- plot + shade_colours() + facet_wrap(~strain+conspecifics+shell)
+ave.all
+
+#########
+##### each condition separately ######
+########
+
+mean_ind <- avg.day.combined %>% group_by(sex, strain, shell, conspecifics, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+
+#### AS
+AS_ns_nc <- mean_ind[mean_ind$strain == "AS" & mean_ind$shell == "n" & mean_ind$conspecifics == "n",]
+p_AS_ns_nc <- ggplot(AS_ns_nc, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + 
+  geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic() +
+  scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
+  scale_colour_manual(values = c("darkcyan", "magenta3"))
+p_AS_ns_nc
+
+AS_s_nc <- mean_ind[mean_ind$strain == "AS" & mean_ind$shell == "y" & mean_ind$conspecifics == "n",]
+p_AS_s_nc <- ggplot(AS_s_nc, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+p_AS_s_nc
+
+AS_ns_c <- mean_ind[mean_ind$strain == "AS" & mean_ind$shell == "n" & mean_ind$conspecifics == "y",]
+p_AS_ns_c <- ggplot(AS_ns_c, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+p_AS_ns_c
+
+AS_s_c <- mean_ind[mean_ind$strain == "AS" & mean_ind$shell == "y" & mean_ind$conspecifics == "y",]
+p_AS_s_c <- ggplot(AS_s_c, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+p_AS_s_c
+
+#### WS
+
+WS_ns_nc <- mean_ind[mean_ind$strain == "WS" & mean_ind$shell == "n" & mean_ind$conspecifics == "n" & mean_ind$light_per == "n",]
+p_WS_ns_nc <- ggplot(WS_ns_nc, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+p_WS_ns_nc
+
+WS_s_nc <- mean_ind[mean_ind$strain == "WS" & mean_ind$shell == "y" & mean_ind$conspecifics == "n" & mean_ind$conspecifics == "n" & mean_ind$light_per == "n",]
+p_WS_s_nc <- ggplot(WS_s_nc, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+p_WS_s_nc
+
+WS_ns_c <- mean_ind[mean_ind$strain == "WS" & mean_ind$shell == "n" & mean_ind$conspecifics == "y" & mean_ind$conspecifics == "n" & mean_ind$light_per == "n",]
+p_WS_ns_c <- ggplot(WS_ns_c, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+p_WS_ns_c 
+
+WS_s_c <- mean_ind[mean_ind$strain == "WS" & mean_ind$shell == "y" & mean_ind$conspecifics == "y" & mean_ind$conspecifics == "y" & mean_ind$light_per == "n",]
+p_WS_s_c <- ggplot(WS_s_c, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+p_WS_s_c 
+
+#### AS
+ZS_ns_nc <- mean_ind[mean_ind$strain == "Z" & mean_ind$shell == "n" & mean_ind$conspecifics == "n",]
+p_ZS_ns_nc <- ggplot(ZS_ns_nc, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + 
+  geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic() +
+  scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
+  scale_colour_manual(values = c("darkcyan", "magenta3"))
+p_ZS_ns_nc
+
+ZS_s_nc <- mean_ind[mean_ind$strain == "Z" & mean_ind$shell == "y" & mean_ind$conspecifics == "n",]
+p_ZS_s_nc <- ggplot(ZS_s_nc, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+p_ZS_s_nc
+
+ZS_ns_c <- mean_ind[mean_ind$strain == "Z" & mean_ind$shell == "n" & mean_ind$conspecifics == "y",]
+p_ZS_ns_c <- ggplot(ZS_ns_c, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+p_ZS_ns_c
+
+ZS_s_c <- mean_ind[mean_ind$strain == "Z" & mean_ind$shell == "y" & mean_ind$conspecifics == "y",]
+p_ZS_s_c <- ggplot(ZS_s_c, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+p_ZS_s_c
 
 
+######check for colour blindness
 
+### weeklong data ############
+week.combined <- Reduce(rbind, als.data.list)
+week.combined <- merge(week.combined, meta_data, by = "sample_id")
+
+week_d <- week.combined %>% group_by(sex, strain, shell, conspecifics, day, hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+
+##### AS
+AS_ns_nc <- week_d[week_d$strain == "AS" & week_d$shell == "n" & week_d$conspecifics == "n",]
+p_AS_ns_nc <- ggplot(AS_ns_nc, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_AS_ns_nc
+
+AS_s_nc <- week_d[week_d$strain == "AS" & week_d$shell == "y" & week_d$conspecifics == "n",]
+p_AS_s_nc <- ggplot(AS_s_nc, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_AS_s_nc
+
+AS_ns_c <- week_d[week_d$strain == "AS" & week_d$shell == "n" & week_d$conspecifics == "y",]
+p_AS_ns_c <- ggplot(AS_ns_c, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_AS_ns_c
+
+AS_s_c <- week_d[week_d$strain == "AS" & week_d$shell == "y" & week_d$conspecifics == "y",]
+p_AS_s_c <- ggplot(AS_s_c, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_AS_s_c
+
+###### WS
+
+WS_ns_nc <- week_d[week_d$strain == "WS" & week_d$shell == "n" & week_d$conspecifics == "n" & week_d$light_per == "n",]
+p_WS_ns_nc <- ggplot(WS_ns_nc, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_WS_ns_nc
+
+WS_s_nc <- week_d[week_d$strain == "WS" & week_d$shell == "y" & week_d$conspecifics == "n" & week_d$light_per == "n",]
+p_WS_s_nc <- ggplot(WS_s_nc, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_WS_s_nc
+
+WS_ns_c <- week_d[week_d$strain == "WS" & week_d$shell == "n" & week_d$conspecifics == "y" & week_d$light_per == "n",]
+p_WS_ns_c <- ggplot(WS_ns_c, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_WS_ns_c
+
+WS_s_c <- week_d[week_d$strain == "WS" & week_d$shell == "y" & week_d$conspecifics == "y" & week_d$light_per == "n",]
+p_WS_s_c <- ggplot(WS_s_c, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_WS_s_c
+
+
+#######ZS
+
+ZS_ns_nc <- week_d[week_d$strain == "Z" & week_d$shell == "n" & week_d$conspecifics == "n",]
+p_ZS_ns_nc <- ggplot(ZS_ns_nc, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_ZS_ns_nc
+
+ZS_s_nc <- week_d[week_d$strain == "Z" & week_d$shell == "y" & week_d$conspecifics == "n",]
+p_ZS_s_nc <- ggplot(ZS_s_nc, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_ZS_s_nc
+
+ZS_ns_c <- week_d[week_d$strain == "Z" & week_d$shell == "n" & week_d$conspecifics == "y",]
+p_ZS_ns_c <- ggplot(ZS_ns_c, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_ZS_ns_c
+
+ZS_s_c <- week_d[week_d$strain == "Z" & week_d$shell == "y" & week_d$conspecifics == "y",]
+p_ZS_s_c <- ggplot(ZS_s_c, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.3) + geom_line() + theme_classic()
+p_ZS_s_c
+
+#####Light per###
+### For laura's shell dwellers
+
+test_2 <- week.combined %>% group_by(sex, shell, conspecifics, hour, day) %>% mutate(sd_speed_mm = sd(mean_speed_mm), mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+
+shells_conspecifics <- test_2[test_2$light_per == "y" & test_2$shell == "y" & test_2$conspecifics == "y",]
+nothing <- test_2[test_2$light_per == "y" & test_2$shell == "n" & test_2$conspecifics == "n",]
+
+## "&" means and, "|" means or
+## Then plot
+
+## Days 4 and 5 have pulses
+## I think they need to be shifted a bit, because the way they are averaged and the way these rects are plotted doesn't match?
+dts <- data.frame(xstart = c("1970-01-04 03:00:00", "1970-01-04 15:00:00", "1970-01-05 03:00:00", "1970-01-05 15:00:00", "1970-01-07 00:00:00"), xend = c("1970-01-04 04:00:00", "1970-01-04 16:00:00", "1970-01-05 04:00:00", "1970-01-05 16:00:00", "1970-01-08 23:59:00"), col = c("light_pulse", "dark_pulse", "light_pulse", "dark_pulse", "dark_dark"))
+
+plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + geom_ribbon(aes(ymin = mean_speed_mm-sd_speed_mm, ymax = mean_speed_mm+sd_speed_mm, color = sex), alpha = 0.1) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
+
+plot_both <- ggplot(shells_conspecifics, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
+plot_nothing <- ggplot(nothing, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
+
+
+# patchwork in action!
+library(patchwork)
+plot_nothing / plot_both + plot_layout(ncol = 1, guides = "collect", heights = c(5,5))
+
+ave.all.7days <- plot + shade_colours() + facet_wrap(~sex, ncol = 1, scales = "free_y")
 
 ##################################################################################################
 ##### Species without shell and all males and females averaged
@@ -135,7 +317,7 @@ plot + shade_colours() + facet_wrap(~strain + conspecifics + shell, ncol = 4)
 # week.combined <- merge(week.combined, meta_data, by = "sample_id")
 
 # averages by groupings
-# test_2 <- week.combined %>% group_by(sex, strain, shell, conspecifics, hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+# test_2 <- week.combined %>% group_by(sex, strain, shell, conspecifics, day, hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
 ## Then plot
 # plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz_7days() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
@@ -187,7 +369,7 @@ plot + shade_colours() + facet_wrap(~strain + conspecifics + shell, ncol = 4)
 
 
 
-# p <- ggplot(avg.day.combined[avg.day.combined$species == "Lamoce",], aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
+# p <- ggplot(avg.day.combined[avg.day.combined$species == "Neobre",], aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
 
 # t <- avg.day.combined %>% group_by(sex, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
@@ -282,25 +464,47 @@ ave.all_by_sex
 
 
 
-### weeklong data
+### weeklong data 
 
-week.combined <- Reduce(rbind, als.data.list)
-week.combined <- merge(week.combined, meta_data, by = "sample_id")
-test_2 <- week.combined %>% group_by(sex, strain, shell, conspecifics, hour, half_hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+# week.combined <- Reduce(rbind, als.data.list)
+# week.combined <- merge(week.combined, meta_data, by = "sample_id")
 
-plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + geom_rect_shading_bz_7days() + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic()
-ave.all.7days <- plot + shade_colours() + facet_wrap(~strain+shell+conspecifics, ncol = 1)
-ave.all.7days
+# test_2 <- week.combined %>% group_by(sex, strain, shell, conspecifics, day, hour) %>% mutate(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
 
-head(avg.day.combined)
-test_2$strain == "K"
+# plot <- ggplot(test_2[test_2$strain == "WS",], aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+#  geom_rect_shading_bz_7days() + shade_colours() + 
+#  geom_point(size = 0.3) + geom_line() + theme_classic()
 
-ggplot(avg.day.combined[avg.day.combined$species == "Neobre",], aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + geom_rect_shading_bz() + shade_colours() + geom_point() + geom_line() + theme_classic()
-> 
-  > p + scale_fill_manual(values = c("night" = "lightblue", "dawn" = "gold", "day" = "white", "dusk" = "gold")) + scale_colour_manual(values = c("black", "red"))
-Scale for fill is already present.
-Adding another scale for fill, which will replace the existing scale.
-> 
-  > p + facet_wrap(~strain+conspecifics+shell)
-> p + facet_wrap(~strain+conspecifics+shell, ncol=4)
+# plot + shade_colours() + facet_wrap(~strain+conspecifics+shell, ncol = 4)
+
+
+#####Light per###
+### For laura's shell dwellers
+
+# test_2 <- week.combined %>% group_by(sex, shell, conspecifics, hour, day) %>% mutate(sd_speed_mm = sd(mean_speed_mm), mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+
+# shells_conspecifics <- test_2[test_2$light_per == "y" & test_2$shell == "y" & test_2$conspecifics == "y",]
+# nothing <- test_2[test_2$light_per == "y" & test_2$shell == "n" & test_2$conspecifics == "n",]
+
+## "&" means and, "|" means or
+## Then plot
+
+## Days 4 and 5 have pulses
+## I think they need to be shifted a bit, because the way they are averaged and the way these rects are plotted doesn't match?
+# dts <- data.frame(xstart = c("1970-01-04 03:00:00", "1970-01-04 15:00:00", "1970-01-05 03:00:00", "1970-01-05 15:00:00", "1970-01-07 00:00:00"), xend = c("1970-01-04 04:00:00", "1970-01-04 16:00:00", "1970-01-05 04:00:00", "1970-01-05 16:00:00", "1970-01-08 23:59:00"), col = c("light_pulse", "dark_pulse", "light_pulse", "dark_pulse", "dark_dark"))
+
+# plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + geom_ribbon(aes(ymin = mean_speed_mm-sd_speed_mm, ymax = mean_speed_mm+sd_speed_mm, color = sex), alpha = 0.1) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
+
+# plot_both <- ggplot(shells_conspecifics, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
+# plot_nothing <- ggplot(nothing, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
+
+#### patchwork in action!
+# library(patchwork)
+# plot_nothing / plot_both + plot_layout(ncol = 1, guides = "collect", heights = c(5,5))
+
+# ave.all.7days <- plot + shade_colours() + facet_wrap(~sex, ncol = 1, scales = "free_y")
+
+# pdf("light_pulse_experiments_20230407_sex.pdf", width = 25, height = 7.5)
+# ave.all.7days
+# dev.off()
 
