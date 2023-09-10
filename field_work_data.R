@@ -9,6 +9,8 @@ library(gsheet)
 library(tictoc)
 library(data.table)
 library(dplyr)
+library(patchwork)
+
 url <- 'https://docs.google.com/spreadsheets/d/1IU6dzH7gYW5OgLho26Nu9IfQ9D4nIqGG4y6XEY0fAH8/edit?pli=1#gid=1049314205'
 fw_data <- read.csv(text=gsheet2text(url, format='csv'), stringsAsFactors=FALSE)
 
@@ -50,7 +52,7 @@ p<- fw_data %>%
             mapping = aes(x = time, y = value, group=1)) +
   annotate("rect", xmin=c(0,18.25), xmax=c(5.25,24.5), ymin=c(0,0) , ymax=c(380,380), alpha=0.2, fill="3333FF")
 p1 <- p + annotate("rect", xmin=c(5.25,17.75), xmax=c(5.5,18.25), ymin=c(0,0) , ymax=c(380,380), alpha=0.2, fill="gold") + theme_classic()
-p2 <- p1 + annotate("rect", xmin=c(13.5), xmax=c(15.5), ymin=c(0,0) , ymax=c(380,380), alpha=0.1, fill="darkolivegreen3") +
+mul <- p2 <- p1 + annotate("rect", xmin=c(13.5), xmax=c(15.5), ymin=c(0,0) , ymax=c(380,380), alpha=0.1, fill="darkolivegreen3") +
   ggtitle("Activity of N.multifasciatus in the wild")  
 p2 + theme(
   plot.title = element_text(color="black", size=14, face="bold.italic"),
@@ -105,7 +107,7 @@ p<- fw_data %>%
             mapping = aes(x = time, y = value, group=1)) +
   annotate("rect", xmin=c(0,18.25), xmax=c(5.25,25.5), ymin=c(0,0) , ymax=c(22,22), alpha=0.2, fill="3333FF")
 p1 <- p + annotate("rect", xmin=c(5.25,17.75), xmax=c(5.5,18.25), ymin=c(0,0) , ymax=c(22,22), alpha=0.2, fill="gold") + theme_classic()
-p2 <- p1 + annotate("rect", xmin=c(12.5), xmax=c(14.5), ymin=c(0,0) , ymax=c(22,22), alpha=0.1, fill="darkolivegreen3")+
+lam <- p2 <- p1 + annotate("rect", xmin=c(12.5), xmax=c(14.5), ymin=c(0,0) , ymax=c(22,22), alpha=0.1, fill="darkolivegreen3")+
   ggtitle("Activity of L. ocellatus in the wild")  
 p2 + theme(
   plot.title = element_text(color="black", size=14, face="bold.italic"),
@@ -141,9 +143,46 @@ p<- fw_data %>%
             mapping = aes(x = time, y = value, group=1)) +
   annotate("rect", xmin=c(0,18.25), xmax=c(5.25,25.5), ymin=c(0,0) , ymax=c(54,54), alpha=0.2, fill="3333FF")
 p1 <- p + annotate("rect", xmin=c(5.25,17.75), xmax=c(5.5,18.25), ymin=c(0,0) , ymax=c(54,54), alpha=0.2, fill="gold") + theme_classic()
-p2 <- p1 + annotate("rect", xmin=c(11.5), xmax=c(14.5), ymin=c(0,0) , ymax=c(54,54), alpha=0.1, fill="darkolivegreen3") +
+tel<- p2 <- p1 + annotate("rect", xmin=c(11.5), xmax=c(14.5), ymin=c(0,0) , ymax=c(54,54), alpha=0.1, fill="darkolivegreen3") +
   ggtitle("Activity of T. temporalis in the wild")  
 p2 + theme(
   plot.title = element_text(color="black", size=14, face="bold.italic"),
   axis.title.x = element_text(color="black", size=12, face="bold"),
   axis.title.y = element_text(color="black", size=12, face="bold"))
+
+
+##### patchwork
+
+### Figure 1
+library(figpatch)
+library(ggplot2)
+library(patchwork)
+
+image_path <- system.file(
+  "extdata", 
+  "fig.png", 
+  package = "figpatch", 
+  mustWork = TRUE)
+setwd("/Users/laura_fritschi/Downloads")
+# wrap_plots(img, mul, mul, img)
+mul_d <- fig("/Users/laura_fritschi/Downloads/mul_d.png")
+mul_n <- fig("/Users/laura_fritschi/Downloads/mul_n.png")
+lam_d <- fig("/Users/laura_fritschi/Downloads/lamoce_day.png")
+lam_n <- fig("/Users/laura_fritschi/Downloads/lamoce_night.png")
+
+tel_d <- fig("/Users/laura_fritschi/Downloads/tel_d.png")
+tel_n <- fig("/Users/laura_fritschi/Downloads/tel_n.png")
+setup <- fig("/Users/laura_fritschi/Downloads/field_setup_vers_1.jpg")
+
+
+layout <- "
+AABBGGGG
+CCDDGGGG
+EEFFGGGG
+HHHHIIJJ
+HHHHIIJJ
+"
+mul_d + mul_n + lam_d + lam_n + tel_d + tel_n + mul + setup + lam + tel + 
+  plot_layout(design = layout, guides = "collect") + 
+  plot_annotation(tag_levels = 'A') & 
+  theme(plot.tag = element_text(size = 12))
