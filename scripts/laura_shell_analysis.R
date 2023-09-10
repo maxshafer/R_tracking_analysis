@@ -187,6 +187,39 @@ p_ZS_s_c <- ggplot(ZS_s_c, aes(x = datetime, y = mean_speed_mm, group = sample_i
   labs(x ="time", y = "speed (mm/s)")
 p_ZS_s_c
 
+######## brevis
+
+Nb_ns_nc <- mean_ind[mean_ind$strain == "K" & mean_ind$shell == "n" & mean_ind$conspecifics == "n",]
+p_Nb_ns_nc <- ggplot(Nb_ns_nc, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + 
+  geom_rect_shading_bz() + shade_colours() + geom_point(size = 0.5) + geom_line() + theme_classic() +
+  scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
+  scale_colour_manual(values = c("magenta3", "darkcyan")) +
+  labs(x ="time", y = "speed (mm/s)")
+p_Nb_ns_nc
+
+Nb_s_nc <- mean_ind[mean_ind$strain == "K" & mean_ind$shell == "y" & mean_ind$conspecifics == "n",]
+p_Nb_s_nc <- ggplot(Nb_s_nc, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + 
+  geom_rect_shading_bz() + shade_colours() + geom_point(size = 0.5) + geom_line() + theme_classic() +
+  scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
+  scale_colour_manual(values = c("magenta3", "darkcyan")) +
+  labs(x ="time", y = "speed (mm/s)")
+p_Nb_s_nc
+
+Nb_ns_c <- mean_ind[mean_ind$strain == "K" & mean_ind$shell == "n" & mean_ind$conspecifics == "y",]
+p_Nb_ns_c <- ggplot(Nb_ns_c, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + 
+  geom_rect_shading_bz() + shade_colours() + geom_point(size = 0.5) + geom_line() + theme_classic() +
+  scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
+  scale_colour_manual(values = c("magenta3", "darkcyan")) +
+  labs(x ="time", y = "speed (mm/s)")
+p_Nb_ns_c
+
+Nb_s_c <- mean_ind[mean_ind$strain == "K" & mean_ind$shell == "y" & mean_ind$conspecifics == "y",]
+p_Nb_s_c <- ggplot(Nb_s_c, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + 
+  geom_rect_shading_bz() + shade_colours() + geom_point(size = 0.5) + geom_line() + theme_classic() +
+  scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
+  scale_colour_manual(values = c("magenta3", "darkcyan")) +
+  labs(x ="time", y = "speed (mm/s)")
+p_Nb_s_c
 
 ######check for colour blindness idea, but does not work
 install.packages("colourblindr")
@@ -309,10 +342,54 @@ p_wZS_s_c <- ggplot(ZS_s_c, aes(x = datetime, y = mean_speed_mm, group = sex, co
   scale_colour_manual(values = c("magenta3", "darkcyan"))
 p_wZS_s_c
 
-###### patchwork######
+#########brevis week
+Nb_ns_nc <- week_d[week_d$strain == "K" & week_d$shell == "n" & week_d$conspecifics == "n",]
+p_wNb_ns_nc <- ggplot(Nb_ns_nc, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.5) + geom_line() + theme_classic() +
+  scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
+  scale_colour_manual(values = c("magenta3", "darkcyan")) + 
+  ggtitle("nothing") +
+  labs(x ="time", y = "speed (mm/s)")
+p_wNb_ns_nc
+
+Nb_s_nc <- week_d[week_d$strain == "K" & week_d$shell == "y" & week_d$conspecifics == "n",]
+p_wNb_s_nc <- ggplot(Nb_s_nc, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.5) + geom_line() + theme_classic() +
+  scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
+  scale_colour_manual(values = c("magenta3", "darkcyan")) +
+  ggtitle("only a shell") +
+  labs(x ="time", y = "speed (mm/s)")
+p_wNb_s_nc
+
+Nb_ns_c <- week_d[week_d$strain == "K" & week_d$shell == "n" & week_d$conspecifics == "y",]
+p_wNb_ns_c <- ggplot(Nb_ns_c, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.5) + geom_line() + theme_classic() +
+  scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
+  scale_colour_manual(values = c("magenta3", "darkcyan")) +
+  ggtitle("only conspecifics") +
+  labs(x ="time", y = "speed (mm/s)")
+p_wNb_ns_c
+
+Nb_s_c <- week_d[week_d$strain == "K" & week_d$shell == "y" & week_d$conspecifics == "y",]
+p_wNb_s_c <- ggplot(Nb_s_c, aes(x = datetime, y = mean_speed_mm, group = sex, color = sex)) + 
+  geom_rect_shading_bz_7days() + shade_colours() + 
+  geom_point(size = 0.5) + geom_line() + theme_classic() +
+  scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
+  scale_colour_manual(values = c("magenta3", "darkcyan")) +
+  ggtitle("both") +
+  labs(x ="time", y = "speed (mm/s)")
+p_wNb_s_c
+
+###### patchwork###### 
+# patchwork in action!
 library(patchwork)
 # plot_nothing / plot_both + plot_layout(ncol = 1, guides = "collect", heights = c(5,5))
 # p_wAS_ns_nc / p_wAS_s_nc / p_wAS_ns_c + plot_layout(ncol = 1, guides = "collect", heights = c(5,5,5))
+
+
 
 #### Figure 2
 pw <- p1 / p2 / p3 + plot_layout(ncol = 1, guides = "collect", heights = c(5,5,5))
@@ -330,9 +407,7 @@ pw + plot_annotation(tag_levels = 'A') +
   caption = 'Done in the Biozentrum Basel, Switzerland'
 )
 
-# add text 
-patchwork + labs(tag = "arbitrary words") +
-  theme(plot.tag.position = c(0,1)) # x,y 
+
 ###### Figure 3
 
 layout <- "
@@ -346,6 +421,28 @@ p_AS_ns_nc + p_AS_s_nc + p_AS_ns_c + p_AS_s_c +
   plot_layout(design = layout, guides = "collect") 
 
 # we still have to standardise the plots (all the same speed ranges)
+
+######  Figure 5 brevis
+
+layout <- "
+#AABB#
+######
+#CCDD#
+"
+p_wNb_ns_nc + p_wNb_s_c + p_wNb_s_nc + p_wNb_ns_c + plot_layout(ncol = 2, guides = "collect", heights = c(5,5,5)) +
+  plot_annotation(tag_levels = 'A') 
+
+p_wNb_ns_nc + p_wNb_s_c + p_wNb_s_nc + p_wNb_ns_c + fish + shell + plot_layout(design = layout, guides = "collect") +
+  plot_annotation(tag_levels = 'A') 
+
+layout <- "
+#AA
+#BB
+#CC
+#DD
+"
+p_wNb_ns_nc + p_wNb_s_c + p_wNb_s_nc + p_wNb_ns_c + plot_layout(design = layout, guides = "collect") +
+  plot_annotation(tag_levels = 'A') 
 
 
 #####Light per ######
@@ -369,16 +466,7 @@ plot_both <- ggplot(shells_conspecifics, aes(x = datetime, y = mean_speed_mm, co
 plot_nothing <- ggplot(nothing, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
 
 
-# patchwork in action!
-library(patchwork)
 
-plot_nothing / plot_both + plot_layout(ncol = 1, guides = "collect", heights = c(5,5))
-
-
-### try outs
-p_AS_ns_nc / p_AS_s_nc / p_AS_ns_c / p_AS_s_c + plot_layout(ncol = 2, guides = "collect", heights = c(3,5))
-
-p_AS_ns_nc / p_AS_s_nc / p_AS_ns_c + plot_layout(ncol = 1, guides = "collect", heights = c(5,5,5))
 ##################################################################################################
 ##### Species without shell and all males and females averaged
 ##################################################################################################
