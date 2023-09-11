@@ -2,7 +2,7 @@
 ## Maxwell E.R. Shafer 2023
 ## Last updated 03/02/2023
 
-## This funtion takes a file path of an als file, loads it into memory, and summarises it by second, minute (default behaviour), halfhour, or hour
+## This function takes a file path of an als file, loads it into memory, and summarises it by second, minute (default behaviour), halfhour, or hour
 ## Returns the summarised data, labelled with sample_id
 
 loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "minute", "halfhour", "hour"), datetime_origin = "1970-01-01 00:00:00", normalise = "both") {
