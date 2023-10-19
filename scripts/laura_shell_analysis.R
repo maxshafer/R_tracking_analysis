@@ -127,7 +127,6 @@ p_WS_ns_nc <- ggplot(WS_ns_nc, aes(x = datetime, y = mean_speed_mm, group = samp
   scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
   scale_colour_manual(values = c("magenta3", "darkcyan")) +
   labs(x ="time", y = "speed (mm/s)")
-
 p_WS_ns_nc
 
 WS_s_nc <- mean_ind[mean_ind$strain == "WS" & mean_ind$shell == "y" & mean_ind$conspecifics == "n" & mean_ind$conspecifics == "n" & mean_ind$light_per == "n",]
@@ -138,7 +137,7 @@ p_WS_s_nc <- ggplot(WS_s_nc, aes(x = datetime, y = mean_speed_mm, group = sample
   labs(x ="time", y = "speed (mm/s)")
 p_WS_s_nc
 
-WS_ns_c <- mean_ind[mean_ind$strain == "WS" & mean_ind$shell == "n" & mean_ind$conspecifics == "y" & mean_ind$conspecifics == "n" & mean_ind$light_per == "n",]
+WS_ns_c <- mean_ind[mean_ind$strain == "WS" & mean_ind$shell == "n" & mean_ind$conspecifics == "y" & mean_ind$light_per == "n",]
 p_WS_ns_c <- ggplot(WS_ns_c, aes(x = datetime, y = mean_speed_mm, group = sample_id, color = sex)) + 
   geom_rect_shading_bz() + shade_colours() + geom_point(size = 0.5) + geom_line() + theme_classic() +
   scale_fill_manual(values = c("night" = "lightskyblue1", "dawn" = "gold", "day" = "white", "dusk" = "gold")) +
@@ -425,14 +424,24 @@ p_AS_ns_nc + p_AS_s_nc + p_AS_ns_c + p_AS_s_c +
 ######  Figure 5 brevis
 
 layout <- "
-#AABB#
-######
-#CCDD#
+############
+AAABBBCCCDDD
+############
+"
+
+p_Nb_ns_nc + p_Nb_s_nc + p_Nb_ns_c + p_Nb_s_c + plot_layout(design = layout, guides = "collect") +
+  plot_annotation(tag_levels = 'A') 
+
+
+layout <- "
+AAAABBBB
+########
+CCCCDDDD
 "
 p_wNb_ns_nc + p_wNb_s_c + p_wNb_s_nc + p_wNb_ns_c + plot_layout(ncol = 2, guides = "collect", heights = c(5,5,5)) +
   plot_annotation(tag_levels = 'A') 
 
-p_wNb_ns_nc + p_wNb_s_c + p_wNb_s_nc + p_wNb_ns_c + fish + shell + plot_layout(design = layout, guides = "collect") +
+p_wNb_ns_nc + p_wNb_s_c + p_wNb_s_nc + p_wNb_ns_c + plot_layout(design = layout, guides = "collect") +
   plot_annotation(tag_levels = 'A') 
 
 layout <- "
@@ -441,7 +450,7 @@ layout <- "
 #CC
 #DD
 "
-p_wNb_ns_nc + p_wNb_s_c + p_wNb_s_nc + p_wNb_ns_c + plot_layout(design = layout, guides = "collect") +
+p_wNb_ns_nc + p_wNb_s_nc + p_wNb_ns_c + p_wNb_s_c + plot_layout(design = layout, guides = "collect") +
   plot_annotation(tag_levels = 'A') 
 
 
@@ -462,9 +471,18 @@ dts <- data.frame(xstart = c("1970-01-04 03:00:00", "1970-01-04 15:00:00", "1970
 
 plot <- ggplot(test_2, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + geom_ribbon(aes(ymin = mean_speed_mm-sd_speed_mm, ymax = mean_speed_mm+sd_speed_mm, color = sex), alpha = 0.1) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
 
-plot_both <- ggplot(shells_conspecifics, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
-plot_nothing <- ggplot(nothing, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + shade_colours() + geom_point(size = 1) + geom_line() + theme_classic() + scale_color_manual(values = c("red", "black"))
+plot_both <- ggplot(shells_conspecifics, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + 
+  geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + shade_colours() + geom_point(size = 0.25) + 
+  geom_line() + theme_classic() + scale_color_manual(values = c("red", "black")) +
+  ggtitle("both")
+plot_nothing <- ggplot(nothing, aes(x = datetime, y = mean_speed_mm, color = sex, group = sex)) + 
+  geom_rect_shading_bz_Ndays(n_days = 13, date_time_shade = dts) + shade_colours() + geom_point(size = 0.25) + 
+  geom_line() + theme_classic() + scale_color_manual(values = c("red", "black")) +
+  ggtitle("nothing")
 
+# patchwork
+plot_nothing + plot_both + plot_layout(ncol = 1, guides = "collect") +
+  plot_annotation(tag_levels = 'A') 
 
 
 ##################################################################################################
