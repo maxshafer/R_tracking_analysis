@@ -9,8 +9,8 @@ getRest <- function(als_data = als_data, threshold = 15, pct = 0.05) {
   als_data <- tail(als_data, -1)
   
   als_data$rest <- runner(als_data$mean_speed_mm, k = 60, f = function(x) sum(x < threshold) > cutoff, lag = -30)
-  als_data <- tail(data_subset, -30)
-  als_data <- head(data_subset, -30)
+  als_data <- tail(als_data, -30)
+  als_data <- head(als_data, -30)
   toc()
   
   return (als_data)
@@ -29,13 +29,18 @@ getPhase <- function(als_data = als_data, day = "7:00", night = "19:00") {
   dusk_start <- format(night - hours(1), format="%H:%M")
   dusk_end <- format(night + hours(1), format="%H:%M")
   
-  phase <- lapply(als_data$datetime, function(x) 
-                  if (between(parseTime(x, TRUE), dawn_start, dawn_end)) { "dawn" }
-                  else if (between(parseTime(x, TRUE), dusk_start, dusk_end)) { "dusk" }
-                  else if (parseTime(x, TRUE) >= dawn_end & parseTime(x, TRUE) <= dusk_start) { "day" }
-                  else { "night" })
+  als_data <- mutate(als_data, phase = case_when(between(parseTime(datetime, TRUE), dusk_start, dusk_end) ~ 'dusk',
+                                                 between(parseTime(datetime, TRUE), dawn_start, dawn_end) ~ 'dawn',
+                                                 between(parseTime(datetime, TRUE), dawn_end, dusk_start) ~ 'day',
+                                                 .default = 'night'))
   
-  als_data$phase <- cbind(als_data, phase)
+  #phase <- lapply(als_data$datetime, function(x) 
+  #                if (between(parseTime(x, TRUE), dawn_start, dawn_end)) { "dawn" }
+  #                else if (between(parseTime(x, TRUE), dusk_start, dusk_end)) { "dusk" }
+  #                else if (parseTime(x, TRUE) >= dawn_end & parseTime(x, TRUE) <= dusk_start) { "day" }
+  #                else { "night" })
+  
+  #als_data$phase <- cbind(als_data, phase)
   toc()
   
   return(als_data)
@@ -65,15 +70,10 @@ totalRest <- function(als_data = als_data, units = c("second", "minute", "hour")
 # Creates new dataframe with the bout structure (length, start and end times, and phases)
 boutStructure <- function(als_data = als_data) {
   tic("bout structure determined")
-  rest_seq <- character(0)
-  bout_lengths <- integer(0)
-  
-  bouts = data.frame(state = rest_seq, 
-                     length = bout_lengths)
   
   seq <- rle(als_data$rest)
-  rest_seq <- c(rest_seq, seq$values)
-  bout_lengths <- c(bout_lengths, seq$lengths)
+  bouts = data.frame(state = seq$values,
+                     length = seq$lengths)
   
   bouts$species_six[1] <- als_data$species_six[1]
   bouts$sample_id[1] <- als_data$sample_id[1]
