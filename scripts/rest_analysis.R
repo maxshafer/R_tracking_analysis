@@ -24,5 +24,5 @@ als_data <- loadALSfiles(als_file, average_by = "second")
 data.combined <- merge(als_data, meta_data, by = "sample_id")
 
 #print("starting rest analysis")
-rest_data <- restData(data.combined)
+restData(data.combined)
 

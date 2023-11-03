@@ -75,6 +75,7 @@ boutStructure <- function(als_data = als_data) {
   bouts = data.frame(state = seq$values,
                      length = seq$lengths)
   
+  bouts$tribe <- als_data$tribe[1]
   bouts$species_six[1] <- als_data$species_six[1]
   bouts$sample_id[1] <- als_data$sample_id[1]
   bouts$start[1] <- als_data$datetime[1]
@@ -85,6 +86,7 @@ boutStructure <- function(als_data = als_data) {
   # Assign start and end times and phases
   for (i in 1:nrow(bouts)) {
     time_elapsed <- time_elapsed + bouts$length[i]
+    bouts$tribe <- als_data$tribe[time_elapsed]
     bouts$species_six[i] <- als_data$species_six[time_elapsed]
     bouts$sample_id[i] <- als_data$sample_id[time_elapsed]
     
@@ -100,6 +102,9 @@ boutStructure <- function(als_data = als_data) {
   
   bouts$start <- as.POSIXct(bouts$start, origin = "1970-01-01 00:00:00", tz = "GMT")
   bouts$end <- as.POSIXct(bouts$end, origin = "1970-01-01 00:00:00", tz = "GMT")
+  
+  total <- sum(bouts$length)
+  bouts$proportion <- bouts$length/total
   toc()
   
   return(head(bouts, -1))
@@ -131,7 +136,7 @@ boutSummary <- function(bout_data = bout_data) {
   bout_data <- group_by(bout_data, day(bout_data$start), species_six, sample_id, state, start_phase)
   avg_daily <- summarise(bout_data, total_sec = sum(length), total_hour = total_sec/3600, 
                          freq = length(state), mean_length = mean(length), median_length = median(length), sfi = freq/total_hour,
-                         L50 = L50consolidation(length), N50 = N50consolidation(length))
+                         L50 = L50consolidation(length), N50 = N50consolidation(length), proportion = sum(proportion))
   
   names(avg_daily)[1] <- "day"
   
@@ -147,7 +152,7 @@ weekSummary <- function(avg_daily = avg_daily) {
   
   avg_week <- summarise(avg_daily, avg_total = mean(total_hour), avg_freq = mean(freq), 
                         avg_length = mean(mean_length), sfi = mean(sfi),
-                        avg_L50 = L50consolidation(mean_length), avg_N50 = N50consolidation(mean_length))
+                        avg_L50 = mean(L50), avg_N50 = mean(N50), avg_proportion = mean(proportion))
   
   toc()
   return(avg_week)
