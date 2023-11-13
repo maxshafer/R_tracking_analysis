@@ -92,7 +92,7 @@ boutStructure <- function(als_data = als_data) {
   bouts$sample_id[1] <- als_data$sample_id[1]
   bouts$start[1] <- als_data$datetime[1]
   bouts$start_phase[1] <- als_data$phase[1]
-  bouts$diel[1] <- als_data$diel[]
+  bouts$diel[1] <- als_data$diel[1]
 
   time_elapsed = 1
   
@@ -149,7 +149,7 @@ boutSummary <- function(bout_data = bout_data) {
   bout_data <- group_by(bout_data, day(bout_data$start), species_six, sample_id, state, start_phase)
   avg_daily <- summarise(bout_data, total_sec = sum(length), total_hour = total_sec/3600, 
                          freq = length(state), mean_length = mean(length), median_length = median(length), sfi = freq/total_hour,
-                         L50 = L50consolidation(length), N50 = N50consolidation(length), proportion = sum(proportion))
+                         L50 = L50consolidation(length), N50 = N50consolidation(length), proportion = sum(proportion), diel = mode(diel))
   
   names(avg_daily)[1] <- "day"
   
@@ -165,7 +165,7 @@ weekSummary <- function(avg_daily = avg_daily) {
   
   avg_week <- summarise(avg_daily, avg_total = mean(total_hour), avg_freq = mean(freq), 
                         avg_length = mean(mean_length), sfi = mean(sfi),
-                        avg_L50 = mean(L50), avg_N50 = mean(N50), avg_proportion = mean(proportion))
+                        avg_L50 = mean(L50), avg_N50 = mean(N50), avg_proportion = mean(proportion), diel = mode(diel))
   
   toc()
   return(avg_week)
