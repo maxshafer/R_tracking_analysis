@@ -46,6 +46,18 @@ getPhase <- function(als_data = als_data, day = "7:00", night = "19:00") {
   return(als_data)
 }
 
+getDiel <- function(als_data = als_data) {
+  day <- als_data[which(als_data$phase == "day"), ]
+  day <- mean(day$mean_speed_mm)
+  
+  night <- als_data[which(als_data$phase == "night"), ]
+  night <- mean(night$mean_speed_mm)
+  
+  als_data <- mutate(als_data, diel = (day - night)/(day + night))
+  return(als_data)
+
+}
+
 # Turns string into datetime object, keeping only the time if format = TRUE
 parseTime <- function(time = character, format = logical) {
   ifelse(format == TRUE, time <- format(as.POSIXct(time, origin = "1970-01-01 00:00:00", format="%H:%M", tz="GMT"), format="%H:%M"), 
@@ -75,11 +87,12 @@ boutStructure <- function(als_data = als_data) {
   bouts = data.frame(state = seq$values,
                      length = seq$lengths)
   
-  bouts$tribe <- als_data$tribe[1]
+  bouts$tribe[1] <- als_data$tribe[1]
   bouts$species_six[1] <- als_data$species_six[1]
   bouts$sample_id[1] <- als_data$sample_id[1]
   bouts$start[1] <- als_data$datetime[1]
   bouts$start_phase[1] <- als_data$phase[1]
+  bouts$diel[1] <- als_data$diel[]
 
   time_elapsed = 1
   
@@ -181,6 +194,7 @@ restData <- function(als_data = als_data, speed_threshold = 15, pct_movement = 0
   
   als_data <- getRest(als_data, threshold = speed_threshold, pct = pct_movement)
   als_data <- getPhase(als_data, day, night)
+  als_data <- getDiel(als_data)
 
   rest_data <- vector(mode='list', length=3)
   

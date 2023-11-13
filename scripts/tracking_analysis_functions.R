@@ -5,13 +5,13 @@
 ## This function takes a file path of an als file, loads it into memory, and summarises it by second, minute (default behaviour), halfhour, or hour
 ## Returns the summarised data, labelled with sample_id
 
-loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "minute", "halfhour", "hour"), datetime_origin = "1970-01-01 00:00:00", normalise = "both") {
+loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "minute", "halfhour", "hour", "none"), datetime_origin = "1970-01-01 00:00:00", normalise = "both") {
   require("tictoc")
   require("data.table")
   require("stringr")
   
-  if (!(average_by %in% c("second", "minute", "halfhour", "hour"))) {
-    stop("'average_by' must be 'second', 'minute', 'halfhour', or 'hour'")
+  if (!(average_by %in% c("second", "minute", "halfhour", "hour", "none"))) {
+    stop("'average_by' must be 'second', 'minute', 'halfhour', 'hour' or 'none'")
   }
   
   print(paste("processing file", path_to_file, sep = " "))
@@ -30,6 +30,8 @@ loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "min
   # Now summarise by datetime
   # The mutating takes the longest, and can be shortened if you don't need that info ()
   tic("summarised data")
+  if (average_by == "none") { summarised <- table }
+  
   if (average_by == "halfhour") {
     # Takes much longer to do the half_hour, so if you don't want to do it at this point, then the function forgoes it
     output <- table %>% mutate(second = second(datetime), minute = minute(datetime), half_hour = floor_date(datetime, "30 minutes"), hour = hour(datetime), day = day(datetime))
