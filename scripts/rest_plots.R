@@ -20,8 +20,8 @@ weekly_consolidation$avg_length <- as.numeric(weekly_consolidation$avg_length)
 weekly_consolidation$log_sfi <- log(as.numeric(weekly_consolidation$sfi))
 weekly_consolidation$avg_L50 <- as.numeric(weekly_consolidation$avg_L50)
 weekly_consolidation$avg_N50 <- as.numeric(weekly_consolidation$avg_N50)
-weekly_consolidation$proportion <- weekly_consolidation$avg_total/24
-weekly_consolidation$phase_proportion = ifelse(weekly_consolidation$start_phase == "dawn" | weekly_consolidation$start_phase == "dusk", weekly_consolidation$avg_total/2, weekly_consolidation$avg_total/10)
+#weekly_consolidation$proportion <- weekly_consolidation$avg_total/24
+#weekly_consolidation$phase_proportion = ifelse(weekly_consolidation$start_phase == "dawn" | weekly_consolidation$start_phase == "dusk", weekly_consolidation$avg_total/2, weekly_consolidation$avg_total/10)
 
 daily_consolidation$total_hour <- as.numeric(daily_consolidation$total_hour)
 daily_consolidation$freq <- as.numeric(daily_consolidation$freq)
@@ -29,14 +29,14 @@ daily_consolidation$mean_length <- as.numeric(daily_consolidation$mean_length)
 daily_consolidation$log_sfi <- log(as.numeric(daily_consolidation$sfi))
 daily_consolidation$L50 <- as.numeric(daily_consolidation$L50)
 daily_consolidation$N50 <- as.numeric(daily_consolidation$N50)
-daily_consolidation$proportion <- daily_consolidation$total_hour/24
-daily_consolidation$phase_proportion = ifelse(daily_consolidation$start_phase == "dawn" | daily_consolidation$start_phase == "dusk", daily_consolidation$total_hour/2, daily_consolidation$total_hour/10)
+#daily_consolidation$proportion <- daily_consolidation$total_hour/24
+#daily_consolidation$phase_proportion = ifelse(daily_consolidation$start_phase == "dawn" | daily_consolidation$start_phase == "dusk", daily_consolidation$total_hour/2, daily_consolidation$total_hour/10)
 
 consol_byspecies <- group_by(weekly_consolidation, species_six, start_phase)
 consol_byspecies <- summarise(consol_byspecies, avg_total = mean(avg_total), avg_freq = mean(avg_freq), 
                               avg_length = mean(avg_length), sfi = mean(sfi),
                               avg_L50 = mean(avg_L50), avg_N50 = mean(avg_N50),
-                              )
+                              avg_proportion = mean(avg_proportion))
 
 consol_byspecies$avg_total <- as.numeric(consol_byspecies$avg_total)
 consol_byspecies$avg_freq <- as.numeric(consol_byspecies$avg_freq)
@@ -61,7 +61,9 @@ consol_byspeciesONLY <- summarise(consol_byspeciesONLY, avg_total = mean(avg_tot
 
 sfi_byphase <- ggplot(weekly_consolidation, aes(reorder_within(species_six, log_sfi, start_phase), log_sfi, fill = species_six)) + 
   geom_boxplot() + 
+  stat_summary(fun=mean, colour="darkred", geom="point") +
   facet_wrap(~start_phase, scales = "free_x", ncol = 2) +
+  #scale_fill_gradient(low=hcl(15,100,75), high=hcl(195,100,75)) +
   scale_x_reordered() +
   theme(axis.ticks = element_blank(), axis.text.x = element_text(angle=90)) +
   guides(color = "none", fill = "none") +
