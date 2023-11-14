@@ -47,10 +47,10 @@ getPhase <- function(als_data = als_data, day = "7:00", night = "19:00") {
 }
 
 getDiel <- function(als_data = als_data) {
-  day <- als_data[which(als_data$phase == "day"), ]
+  day <- als_data[which(als_data$phase == "day" & als_data$rest == TRUE), ]
   day <- mean(day$mean_speed_mm)
   
-  night <- als_data[which(als_data$phase == "night"), ]
+  night <- als_data[which(als_data$phase == "night" & als_data$rest == TRUE), ]
   night <- mean(night$mean_speed_mm)
   
   als_data <- mutate(als_data, diel = (day - night)/(day + night))
