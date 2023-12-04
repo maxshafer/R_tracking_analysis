@@ -24,18 +24,23 @@ loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "min
   
   # Add datetime
   tic("coverted timestamp to datetime")
-  table$datetime <- as.POSIXct(table$tv_ns/1e9, origin = datetime_origin, tz = "GMT")
+  table$datetime <- format(as.POSIXct(table$tv_ns/1e9, origin = datetime_origin, tz = "GMT"), "%Y-%m-%d %H:%M:%OS3")
+
   toc()
   
   # Now summarise by datetime
   # The mutating takes the longest, and can be shortened if you don't need that info ()
   tic("summarised data")
-  if (average_by == "none") { summarised <- table }
   
   if (average_by == "halfhour") {
     # Takes much longer to do the half_hour, so if you don't want to do it at this point, then the function forgoes it
     output <- table %>% mutate(second = second(datetime), minute = minute(datetime), half_hour = floor_date(datetime, "30 minutes"), hour = hour(datetime), day = day(datetime))
-  } else {
+  }
+  else if (average_by == "none") { 
+    table$sample_id <- str_extract(path_to_file, pattern = "FISH........_c._r.") 
+    return(table)
+  }
+  else {
     output <- table %>% mutate(second = second(datetime), minute = minute(datetime), hour = hour(datetime), day = day(datetime))
   }
   
@@ -43,17 +48,18 @@ loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "min
   if (average_by == "halfhour") { summarised <- output %>% group_by(day, hour, half_hour) }
   if (average_by == "minute") { summarised <- output %>% group_by(day, hour, minute) }
   if (average_by == "second") { summarised <- output %>% group_by(day, hour, minute, second) }
+  #if (average_by == "none") { summarised <- output }
   
   summarised <- summarised %>% summarise(mean_speed_mm = mean(speed_mm), mean_x_nt = mean(x_nt), mean_y_nt = mean(y_nt))
   toc()
   
   ## Now need to convert back to a datetime
   if (average_by == "hour") { summarised$datetime <- paste("1970-01-0", summarised$day, " ", summarised$hour, ":00", ":00", sep = "") }
-  if (average_by == "halfhour") { ssummarised$datetime <- summarised$half_hour }
+  if (average_by == "halfhour") { summarised$datetime <- summarised$half_hour }
   if (average_by == "minute") { summarised$datetime <- paste("1970-01-0", summarised$day, " ", summarised$hour, ":", summarised$minute, ":00", sep = "") }
   if (average_by == "second") { summarised$datetime <- paste("1970-01-0", summarised$day, " ", summarised$hour, ":", summarised$minute, ":", summarised$second, sep = "") }
   
-  summarised$datetime <- as.POSIXct(summarised$datetime, '%Y-%m-%d %H:%M:%S', tz = "GMT")
+  summarised$datetime <- as.POSIXct(summarised$datetime, "%Y-%m-%d %H:%M:%OS3", tz = "GMT")
   
   ## Add sample ID
   summarised$sample_id <- str_extract(path_to_file, pattern = "FISH........_c._r.")

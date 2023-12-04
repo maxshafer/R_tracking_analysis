@@ -1,20 +1,28 @@
 
 # Inserts rest column based on activity in rolling 60 sec windows (default = < 5% movement above 15 mm/s)
-getRest <- function(als_data = als_data, threshold = 15, pct = 0.05) {
+getRest <- function(als_data = als_data, rest_definition, threshold = 15, pct = 0.05) {
   require("runner")
   tic("rest calculated")
-  cutoff = pct*60 
   
   als_data <- als_data[!is.na(als_data$mean_speed_mm),]
   als_data <- tail(als_data, -1)
   
-  als_data$rest <- runner(als_data$mean_speed_mm, k = 60, f = function(x) sum(x < threshold) > cutoff, lag = -30)
+  if (rest_definition == "rolling") {
+    cutoff = pct*600 
+    als_data$rest <- runner(als_data$mean_speed_mm, k = 600, f = function(x) sum(x < threshold) > cutoff, lag = -300)
+  }
+  
+  if (rest_definition == "inactivity") {
+    als_data$rest <- runner(als_data$mean_speed_mm, k = 60, f = function(x) sum(round(x) < 0), lag = -30)
+  }
+  
   als_data <- tail(als_data, -30)
   als_data <- head(als_data, -30)
   toc()
   
   return (als_data)
 }
+
 
 # Inserts phase (dawn/day/dusk/night) for each observation, day/night times can be adjusted but defaulted to 7am and 7pm
 getPhase <- function(als_data = als_data, day = "7:00", night = "19:00") {
@@ -34,23 +42,16 @@ getPhase <- function(als_data = als_data, day = "7:00", night = "19:00") {
                                                  between(parseTime(datetime, TRUE), dawn_end, dusk_start) ~ 'day',
                                                  .default = 'night'))
   
-  #phase <- lapply(als_data$datetime, function(x) 
-  #                if (between(parseTime(x, TRUE), dawn_start, dawn_end)) { "dawn" }
-  #                else if (between(parseTime(x, TRUE), dusk_start, dusk_end)) { "dusk" }
-  #                else if (parseTime(x, TRUE) >= dawn_end & parseTime(x, TRUE) <= dusk_start) { "day" }
-  #                else { "night" })
-  
-  #als_data$phase <- cbind(als_data, phase)
   toc()
   
   return(als_data)
 }
 
 getDiel <- function(als_data = als_data) {
-  day <- als_data[which(als_data$phase == "day" & als_data$rest == TRUE), ]
+  day <- als_data[which(als_data$phase == "day"), ]
   day <- mean(day$mean_speed_mm)
   
-  night <- als_data[which(als_data$phase == "night" & als_data$rest == TRUE), ]
+  night <- als_data[which(als_data$phase == "night"), ]
   night <- mean(night$mean_speed_mm)
   
   als_data <- mutate(als_data, diel = (day - night)/(day + night))
@@ -119,6 +120,8 @@ boutStructure <- function(als_data = als_data) {
   
   bouts$start <- as.POSIXct(bouts$start, origin = "1970-01-01 00:00:00", tz = "GMT")
   bouts$end <- as.POSIXct(bouts$end, origin = "1970-01-01 00:00:00", tz = "GMT")
+  
+  bouts <- mutate(bouts, length = as.numeric(difftime(bouts$end, bouts$start, unit = "secs")))
   
   total <- sum(bouts$length)
   bouts$proportion <- bouts$length/total
@@ -193,13 +196,12 @@ L50consolidation <- function(bout_lengths = bout_lengths) {
 
 
 # Write CSVs for bout data
-restData <- function(als_data = als_data, speed_threshold = 15, pct_movement = 0.05, day = "7:00", night = "19:00") {
+restData <- function(als_data = als_data, rest_definition, speed_threshold = 15, pct_movement = 0.05, day = "7:00", night = "19:00") {
   require("tictoc")
   
-  als_data <- getRest(als_data, threshold = speed_threshold, pct = pct_movement)
+  als_data <- getRest(als_data, rest_definition, threshold = speed_threshold, pct = pct_movement)
   als_data <- getPhase(als_data, day, night)
   als_data <- getDiel(als_data)
-
   rest_data <- vector(mode='list', length=3)
   
   rest_data$bout_data <- boutStructure(als_data)
@@ -210,6 +212,6 @@ restData <- function(als_data = als_data, speed_threshold = 15, pct_movement = 0
   write.csv(rest_data$daily_summary, paste("/home/ayasha/projects/def-mshafer/ayasha/cichlid_bout_data/", als_data$sample_id[1], "_daily_bout_summary.csv", sep = ""))
   write.csv(rest_data$weekly_summary, paste("/home/ayasha/projects/def-mshafer/ayasha/cichlid_bout_data/", als_data$sample_id[1], "_weekly_bout_summary.csv", sep = ""))
   
-  #return(rest_data)
+  return(rest_data)
 }
 
