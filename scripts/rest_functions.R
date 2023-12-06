@@ -1,23 +1,19 @@
 
 # Inserts rest column based on activity in rolling 60 sec windows (default = < 5% movement above 15 mm/s)
-getRest <- function(als_data = als_data, rest_definition, threshold = 15, pct = 0.05) {
+getRest <- function(als_data = als_data, threshold = 15, pct = 0.05) {
   require("runner")
   tic("rest calculated")
   
   als_data <- als_data[!is.na(als_data$mean_speed_mm),]
   als_data <- tail(als_data, -1)
   
-  if (rest_definition == "rolling") {
-    cutoff = pct*600 
-    als_data$rest <- runner(als_data$mean_speed_mm, k = 600, f = function(x) sum(x < threshold) > cutoff, lag = -300)
-  }
   
-  if (rest_definition == "inactivity") {
-    als_data$rest <- runner(als_data$mean_speed_mm, k = 60, f = function(x) sum(round(x) < 0), lag = -30)
-  }
+  cutoff = pct*600 
+  als_data$rest <- runner(als_data$mean_speed_mm, k = 600, f = function(x) sum(x > threshold) < cutoff, lag = -300)
+ 
   
-  als_data <- tail(als_data, -30)
-  als_data <- head(als_data, -30)
+  als_data <- tail(als_data, -300)
+  als_data <- head(als_data, -300)
   toc()
   
   return (als_data)
