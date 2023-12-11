@@ -24,7 +24,7 @@ loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "min
   
   # Add datetime
   tic("coverted timestamp to datetime")
-  table$datetime <- format(as.POSIXct(table$tv_ns/1e9, origin = datetime_origin, tz = "GMT"), "%Y-%m-%d %H:%M:%OS3")
+  table$datetime <- format(as.POSIXct(table$tv_ns/1e9, origin = datetime_origin, tz = "GMT"), "%Y-%m-%d %H:%M:%S")
 
   toc()
   
@@ -59,7 +59,7 @@ loadALSfiles <- function(path_to_file = file_path, average_by = c("second", "min
   if (average_by == "minute") { summarised$datetime <- paste("1970-01-0", summarised$day, " ", summarised$hour, ":", summarised$minute, ":00", sep = "") }
   if (average_by == "second") { summarised$datetime <- paste("1970-01-0", summarised$day, " ", summarised$hour, ":", summarised$minute, ":", summarised$second, sep = "") }
   
-  summarised$datetime <- as.POSIXct(summarised$datetime, "%Y-%m-%d %H:%M:%OS3", tz = "GMT")
+  summarised$datetime <- as.POSIXct(summarised$datetime, "%Y-%m-%d %H:%M:%S", tz = "GMT")
   
   ## Add sample ID
   summarised$sample_id <- str_extract(path_to_file, pattern = "FISH........_c._r.")
@@ -103,7 +103,7 @@ summariseALSdata <- function(als_data = als_data, average_by = c("minute", "half
   if (average_by == "halfhour") { summarised <- als_data %>% group_by(day, hour, half_hour) }
   if (average_by == "minute") { summarised <- als_data %>% group_by(day, hour, minute) }
 
-  summarised <- summarised %>% summarise(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt))
+  summarised <- summarised %>% summarise(mean_speed_mm = mean(mean_speed_mm), mean_x_nt = mean(mean_x_nt), mean_y_nt = mean(mean_y_nt), fraction_rest = sum(rest == TRUE)/length(rest))
 
   ## Now need to convert back to a datetime
   if (average_by == "hour") { summarised$datetime <- paste("1970-01-0", summarised$day, " ", summarised$hour, ":00", ":00", sep = "") }
@@ -112,6 +112,7 @@ summariseALSdata <- function(als_data = als_data, average_by = c("minute", "half
 
   summarised$datetime <- as.POSIXct(summarised$datetime, '%Y-%m-%d %H:%M:%S', tz = "GMT")
   summarised$sample_id <- unique(als_data$sample_id)
+  summarised$species_six <- unique(als_data$species_six)
   
   return(summarised)
 }
