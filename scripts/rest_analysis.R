@@ -29,5 +29,5 @@ data.combined <- merge(als_data, meta_data, by = "sample_id")
 data.combined <- merge(data.combined, PC1, by = "sample_id")
 
 #print("starting rest analysis")
-rest_data <- restData(data.combined, rest_definition = "rolling")
+rest_data <- restData(data.combined)
 
