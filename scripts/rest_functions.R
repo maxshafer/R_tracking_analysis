@@ -1,11 +1,10 @@
-
 # Inserts rest column based on activity in rolling 60 sec windows (default = < 5% movement above 15 mm/s)
 getRest <- function(als_data = als_data, threshold = 15, pct = 0.05) {
   require("runner")
   tic("rest calculated")
   
   als_data <- als_data[!is.na(als_data$speed_mm),]
-  als_data <- tail(als_data, -1)
+  als_data <- tail(als_data, -10)
   
   
   cutoff = pct*600 
@@ -42,43 +41,6 @@ getPhase <- function(als_data = als_data, day = "7:00:00", night = "19:00:00") {
   return(als_data)
 }
 
-getDiel <- function(als_data = als_data) {
-  day <- als_data[which(als_data$phase == "day"), ]
-  day <- mean(day$speed_mm)
-  
-  night <- als_data[which(als_data$phase == "night"), ]
-  night <- mean(night$speed_mm)
-  
-  als_data <- mutate(als_data, diel = (day - night)/(day + night))
-  return(als_data)
-
-}
-
-# Turns string into datetime object, keeping only the time if format = TRUE
-parseTime <- function(time = character, format = logical) {
-  time <- as.POSIXct(paste('1970-01-01 ', time), format = "%Y-%m-%d %H:%M:%S", origin = "", tz = "GMT")
-  
-  if (format == TRUE) {
-    time <- format(time, format="%H:%M:%S")
-  } 
-  return(time)
-}
-
-# Calculates total rest by phase
-totalRest <- function(als_data = als_data, units = c("second", "minute", "hour"), 
-                      phase = c("day", "night", "dawn", "dusk", "all")) {
-  total <- 0
-  
-  if (phase == "all") { total <- sum(als_data$rest == TRUE) }
-  else { total <- sum(als_data$rest == TRUE & als_data$phase == phase) }
-  
-  if (units == "hour") { total <- total/3600 }
-  if (units == "minute") { total <- total/60 }
-
-  return (total)
-}
-
-
 findBoutPhase <- function(start_time, start_phase, end_time, end_phase, day = "07:00:00", night = "19:00:00") {
   day <- as.POSIXct(paste(format(start_time, "%Y-%m-%d"), day), format = "%Y-%m-%d %H:%M:%S", origin = "", tz = "GMT")
   night <- as.POSIXct(paste(format(start_time, "%Y-%m-%d"), night), format = "%Y-%m-%d %H:%M:%S", origin = "", tz = "GMT")
@@ -92,21 +54,26 @@ findBoutPhase <- function(start_time, start_phase, end_time, end_phase, day = "0
   dusk_start <- night - hours(1)
   dusk_end <- night + hours(1)
   
-  if (start_phase == end_phase) { return(start_phase) }
-  else if (start_phase == "dawn" & end_phase == "dusk" | end_phase == "night") { return("day") }
-  else if (start_phase == "dusk" & end_phase == "dawn" | end_phase == "day") { return("night") }
+  if (difftime(start_time, start_time, units = "hours") > 24) {
+    return(NA)
+  }
+  
+  if (start_phase == end_phase & day(start_time) == day(end_time)) { return(start_phase) }
+  else if (start_phase == "dawn" & (end_phase == "dusk" | end_phase == "night")) { return("day") }
+  else if (start_phase == "dusk" & (end_phase == "dawn" | end_phase == "day")) { return("night") }
   else if (start_phase == "night" & end_phase == "dusk") { return("day") }
   else if (start_phase == "day" & end_phase == "dawn") { return("night") }
   else {
-    phase_seq <- c("night", "dawn", "day", "dusk", "night")
-    end_times <- c(dawn_start, dawn_end, dusk_start, dusk_end, dawn_start)
-    if (day(start_time) < day(end_time)) { }
+    case_when(end_phase == "night" ~ next_phase_time <- dusk_end,
+              end_phase == "dawn" ~ next_phase_time <- dawn_start,
+              end_phase == "day" ~ next_phase_time <- dawn_end,
+              end_phase == "dusk" ~ next_phase_time <- dusk_start)
+    
+    if (day(start_time) < day(end_time)) { next_phase_time <- next_phase_time + day(1) }
     
     if (start_phase == "night" & end_phase == "day") { next_phase_time <- day }
     else if (start_phase == "day" & end_phase == "night") { next_phase_time <- night }
-    else { next_phase_time <- end_times[which(phase_seq == start_phase)[1]] }
     
-    if (day(start_time) < day(end_time)) { day(next_phase_time) <- day(next_phase_time) + 1 }
     phase <- ifelse(abs(as.numeric(difftime(start_time, next_phase_time, units = "secs"))) > 
                     abs(as.numeric(difftime(end_time, next_phase_time, units = "secs"))), 
                     start_phase, end_phase)
@@ -115,18 +82,35 @@ findBoutPhase <- function(start_time, start_phase, end_time, end_phase, day = "0
   return(phase)
 }
 
+findDay <- function(start_time, end_time) {
+  day_end = as.POSIXct(paste(format(end_time, "%Y-%m-%d"), "00:00:00"), format = "%Y-%m-%d %H:%M:%S", origin = "", tz = "GMT")
+  
+  day <- ifelse(abs(as.numeric(difftime(start_time, day_end, units = "secs"))) > 
+                abs(as.numeric(difftime(end_time, day_end, units = "secs"))), 
+                day(start_time), day(end_time))
+}
+
 # Creates new dataframe with the bout structure (length, start and end times, and phases)
-boutStructure <- function(als_data = als_data) {
+boutStructure <- function(als_data = als_data, remove_zeros = TRUE) {
   tic("bout structure determined")
   als_data$rest <- ifelse(als_data$rest == TRUE, "rest", "active")
   
   seq <- rle(als_data$rest)
-  bouts = data.frame(state = seq$values,
-                     length = seq$lengths)
-
-  bouts$start[1] <- als_data$datetime[1]
-  bouts$start_phase <- als_data$phase[1]
-
+  bouts <- as.data.frame(cbind(seq$values, seq$lengths))
+  colnames(bouts) <-  c("state", "length")
+  bouts$length <- as.numeric(bouts$length)
+  #bouts <- as.data.frame(bouts)
+  
+  bouts$day <- NA
+  bouts$start <- NA
+  bouts$start_phase <- NA
+  bouts$end <- NA
+  bouts$end_phase <- NA
+  bouts$sample_id <- NA
+  bouts$species_six <- NA
+  bouts$tribe <- NA
+  bouts$diel <- NA
+  
   time_elapsed = 0
   
   # Assign start and end times and phases
@@ -146,13 +130,18 @@ boutStructure <- function(als_data = als_data) {
       bouts$start[i] <- als_data$datetime[last_bout_index]
       bouts$start_phase[i] <- als_data$phase[last_bout_index]
     }
-    
   }
+  bouts$start[1] <- als_data$datetime[1]
+  bouts$start_phase[1] <- als_data$phase[1]
   
   bouts$start <- as.POSIXct(bouts$start, origin = "1970-01-01 00:00:00", tz = "GMT")
   bouts$end <- as.POSIXct(bouts$end, origin = "1970-01-01 00:00:00", tz = "GMT")
   
   bouts <- mutate(bouts, length = as.numeric(difftime(bouts$end, bouts$start, unit = "secs")))
+  bouts <- mutate(bouts, day = ifelse(day(bouts$start) == day(bouts$end), day(bouts$start), 
+                                      findDay(bouts$start, bouts$end)))
+  
+ 
   
   bouts$sample_id <- unique(als_data$sample_id)
   bouts$species_six <- unique(als_data$species_six)
@@ -161,14 +150,16 @@ boutStructure <- function(als_data = als_data) {
   
   bouts$overall_phase <- mapply(findBoutPhase, bouts$start, bouts$start_phase, bouts$end, bouts$end_phase)
   
-  total <- sum(bouts$length)
-  bouts$proportion <- bouts$length/total
+  #total <- sum(bouts$length)
+  #bouts$proportion <- bouts$length/total
+  if (remove_zeros == TRUE) { bouts <- filterBouts(bouts) }
+  
   toc()
   
   return(bouts)
 }
 
-filterBouts <- function(bout_data = bout_data, threshold = 3) {
+filterBouts <- function(bout_data = bout_data, threshold = 0) {
   # Remove all bouts below threshold
   bouts <- filter(bout_data, bout_data$length > threshold)
   
@@ -184,37 +175,50 @@ filterBouts <- function(bout_data = bout_data, threshold = 3) {
     }
   }
   
-  return(head(bouts, -1))
+  return(bouts)
 }
 
 # Returns table with daily summaries of total rest, bout frequency and phase ratio 
-boutSummary <- function(bout_data = bout_data) {
+boutSummary <- function(bout_data = bout_data, summarise_by = c("day", "week"), include_crepuscular = FALSE) {
   tic("bouts summarised")
+  phases <- unique(bout_data$overall_phase)
   
-  bout_data <- group_by(bout_data, day(bout_data$start), species_six, sample_id, state, overall_phase)
-  avg_daily <- summarise(bout_data, total_sec = sum(length), total_hour = total_sec/3600, 
-                         freq = length(state), mean_length = mean(length), median_length = median(length), sfi = freq/total_hour,
-                         L50 = L50consolidation(length), N50 = N50consolidation(length), proportion = sum(proportion), diel = mean(diel),
-                         most_awakenings = mode(start_phase))
+  if (include_crepuscular == FALSE) {
+    bout_data <- mutate(bout_data, overall_phase = ifelse(bout_data$overall_phase == "day" | bout_data$overall_phase == "night", 
+                                                          bout_data$overall_phase,
+                                                          ifelse(bout_data$overall_phase == "dawn", "day", "night")))
+  }
   
-  names(avg_daily)[1] <- "day"
+  daily <- group_by(bout_data, day, species_six, sample_id, state, overall_phase) 
+    
+  summary <- summarise(daily, total_sec = sum(length), total_hour = total_sec/3600, 
+                       freq = length(state), mean_bout_length = mean(length), median_length = median(length), sfi = freq/total_hour,
+                       L50 = L50consolidation(length), N50 = N50consolidation(length), diel = mean(diel),
+                       most_awakenings = getmode(start_phase))
+  
+  if (summarise_by == "week") { 
+    if (sum(summary[which(summary$day == 8), 'total_hour']) < 18) { weekly <- filter(summary, day != 8) }
+    else { weekly <- summary }
+    
+    ndays <- length(unique(summary$day))
+    
+    weeekly <- group_by(weekly, species_six, sample_id, state, overall_phase) 
+    
+    week_summary <- summarise(weekly, avg_total = mean(total_hour), avg_freq = mean(freq), 
+                              mean_bout_length = mean(mean_bout_length), avg_sfi = mean(sfi),
+                              mean_L50 = mean(L50), mean_N50 = mean(N50), mode_N50 = getmode(N50), diel = mean(diel),
+                              most_awakenings = getmode(most_awakenings))
+  }
   
   toc()
-  
-  return (avg_daily)
+  if (summarise_by == "day") { return(summary) }
+  if (summarise_by == "week") { return(week_summary) }
 }
 
-weekSummary <- function(avg_daily = avg_daily) {
-  tic("week summarised")
+getmode <- function(v) {
+  uniqv <- unique(v)
   
-  avg_daily <- group_by(avg_daily, species_six, sample_id, state, overall_phase)
-  
-  avg_week <- summarise(avg_daily, avg_total = mean(total_hour), avg_freq = mean(freq), 
-                        avg_length = mean(mean_length), sfi = mean(sfi), avg_L50 = mean(L50), avg_N50 = mean(N50), 
-                        avg_proportion = mean(proportion), diel = mean(diel), most_awakenings = mode(start_phase))
-  
-  toc()
-  return(avg_week)
+  return(uniqv[which.max(tabulate(match(v, uniqv)))])
 }
 
 N50consolidation <- function(bout_lengths = bout_lengths) {
@@ -230,6 +234,7 @@ N50consolidation <- function(bout_lengths = bout_lengths) {
 }
 
 L50consolidation <- function(bout_lengths = bout_lengths) {
+  bout_lengths <- sort(bout_lengths, TRUE)
   return(bout_lengths[N50consolidation(bout_lengths)])
 }
 
@@ -253,4 +258,3 @@ restData <- function(als_data = als_data, speed_threshold = 15, pct_movement = 0
   
   return(rest_data)
 }
-
