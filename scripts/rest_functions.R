@@ -1,14 +1,14 @@
 # Inserts rest column based on activity in rolling 60 sec windows (default = < 5% movement above 15 mm/s)
 getRest <- function(als_data = als_data, threshold = 15, pct = 0.05) {
-  require("runner")
+  #require("runner")
   tic("rest calculated")
   
   als_data <- als_data[!is.na(als_data$speed_mm),]
-  als_data <- tail(als_data, -10)
+  als_data <- tail(als_data, -1)
   
-  
-  cutoff = pct*600 
-  als_data$rest <- runner(als_data$speed_mm, k = 600, f = function(x) sum(x > threshold) < cutoff, lag = -300)
+  als_data$movement <- als_data$speed_mm > threshold
+ 
+  als_data$rest <- frollmean(als_data$movement, n = 600, align = "center") < pct
   
   als_data <- tail(als_data, -300)
   als_data <- head(als_data, -300)
@@ -64,10 +64,8 @@ findBoutPhase <- function(start_time, start_phase, end_time, end_phase, day = "0
   else if (start_phase == "night" & end_phase == "dusk") { return("day") }
   else if (start_phase == "day" & end_phase == "dawn") { return("night") }
   else {
-    case_when(end_phase == "night" ~ next_phase_time <- dusk_end,
-              end_phase == "dawn" ~ next_phase_time <- dawn_start,
-              end_phase == "day" ~ next_phase_time <- dawn_end,
-              end_phase == "dusk" ~ next_phase_time <- dusk_start)
+    next_phase_time <- case_when(end_phase == "night" ~ dusk_end, end_phase == "dawn" ~ dawn_start,
+              			 end_phase == "day" ~ dawn_end, end_phase == "dusk" ~ dusk_start)
     
     if (day(start_time) < day(end_time)) { next_phase_time <- next_phase_time + day(1) }
     
@@ -189,25 +187,29 @@ boutSummary <- function(bout_data = bout_data, summarise_by = c("day", "week"), 
                                                           ifelse(bout_data$overall_phase == "dawn", "day", "night")))
   }
   
-  daily <- group_by(bout_data, day, species_six, sample_id, state, overall_phase) 
+  daily <- group_by(bout_data, day, tribe, species_six, sample_id, state, overall_phase) 
     
   summary <- summarise(daily, total_sec = sum(length), total_hour = total_sec/3600, 
-                       freq = length(state), mean_bout_length = mean(length), median_length = median(length), sfi = freq/total_hour,
+                       freq = length(state), mean_bout_length = mean(length), median_length = median(length), sfi = freq/total_sec,
                        L50 = L50consolidation(length), N50 = N50consolidation(length), diel = mean(diel),
                        most_awakenings = getmode(start_phase))
   
   if (summarise_by == "week") { 
-    if (sum(summary[which(summary$day == 8), 'total_hour']) < 18) { weekly <- filter(summary, day != 8) }
-    else { weekly <- summary }
+    weekly <- summary
+
+    for (days in 1:8) {
+    	if (sum(weekly[which(weekly$day == days), 'total_hour']) < 18) { weekly <- filter(weekly, day != days) }
+    }
+    #if (sum(summary[which(summary$day == 8), 'total_hour']) < 18) { weekly <- filter(weekly, day != 8) }
+    #if (sum(summary[which(summary$day == 1), 'total_hour']) < 18) { weekly <- filter(weekly, day != 1) }
     
-    ndays <- length(unique(summary$day))
+    weekly <- group_by(weekly, tribe, species_six, sample_id, state, overall_phase) 
     
-    weeekly <- group_by(weekly, species_six, sample_id, state, overall_phase) 
-    
-    week_summary <- summarise(weekly, avg_total = mean(total_hour), avg_freq = mean(freq), 
-                              mean_bout_length = mean(mean_bout_length), avg_sfi = mean(sfi),
-                              mean_L50 = mean(L50), mean_N50 = mean(N50), mode_N50 = getmode(N50), diel = mean(diel),
-                              most_awakenings = getmode(most_awakenings))
+    week_summary <- summarise(weekly, mean_total = mean(total_hour), mean_freq = mean(freq), 
+                              mean_bout_length = mean(mean_bout_length), mean_sfi = mean(sfi),
+                              mean_L50 = mean(L50), mean_N50 = mean(N50), mode_N50 = getmode(N50), 
+			      L50_ofmeans = L50consolidation(mean_bout_length), N50_ofmeans = N50consolidation(mean_bout_length), 
+			      diel = mean(diel), most_awakenings = getmode(most_awakenings))
   }
   
   toc()
@@ -249,8 +251,8 @@ restData <- function(als_data = als_data, speed_threshold = 15, pct_movement = 0
   rest_data <- vector(mode='list', length=3)
   
   rest_data$bout_data <- boutStructure(als_data)
-  rest_data$daily_summary <- boutSummary(rest_data$bout_data)
-  rest_data$weekly_summary <- weekSummary(rest_data$daily_summary)
+  rest_data$daily_summary <- boutSummary(rest_data$bout_data, "day")
+  rest_data$weekly_summary <- boutSummary(rest_data$bout_data, "week")
   
   write.csv(rest_data$bout_data, paste("/home/ayasha/projects/def-mshafer/ayasha/cichlid_bout_data/", als_data$sample_id[1], "_bout_structure.csv", sep = ""))
   write.csv(rest_data$daily_summary, paste("/home/ayasha/projects/def-mshafer/ayasha/cichlid_bout_data/", als_data$sample_id[1], "_daily_bout_summary.csv", sep = ""))
