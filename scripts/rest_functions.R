@@ -182,18 +182,15 @@ boutSummary <- function(bout_data = bout_data, summarise_by = c("day", "week"), 
   phases <- unique(bout_data$overall_phase)
   
   if (include_crepuscular == FALSE) {
-    bout_data <- mutate(bout_data, overall_phase = ifelse(bout_data$overall_phase == "day" | bout_data$overall_phase == "night", 
-                                                          bout_data$overall_phase,
-                                                          ifelse(bout_data$overall_phase == "dawn", "day", "night")))
+    bout_data <- filter(bout_data, overall_phase == "day" | overall_phase =="night")
   }
   
   daily <- group_by(bout_data, day, tribe, species_six, sample_id, state, overall_phase) 
-    
-  summary <- summarise(daily, total_sec = sum(length), total_hour = total_sec/3600, 
-                       freq = length(state), mean_bout_length = mean(length), median_length = median(length), sfi = freq/total_sec,
-                       L50 = L50consolidation(length), N50 = N50consolidation(length), pct_cons = mean(length)/total_sec*100,
-		       pct_cons_L50 = L50/total_sec*100, diel = mean(diel),
-                       most_awakenings = getmode(start_phase))
+  
+  summary <- summarise(daily, total_sec = sum(length), total_hour = total_sec/3600, freq = length(state), 
+                       mean_bout_length = mean(length), median_length = median(length), sfi = freq/total_sec,
+                       L50 = L50consolidation(length), N50 = N50consolidation(length), pct_cons = mean_bout_length/total_sec*100,
+                       pct_cons_L50 = L50/total_sec*100, diel = mean(diel))
   
   if (summarise_by == "week") { 
     weekly <- summary
@@ -209,9 +206,8 @@ boutSummary <- function(bout_data = bout_data, summarise_by = c("day", "week"), 
     week_summary <- summarise(weekly, mean_total = mean(total_hour), mean_freq = mean(freq), 
                               mean_bout_length = mean(mean_bout_length), mean_sfi = mean(sfi),
                               mean_L50 = mean(L50), mean_N50 = mean(N50), mode_N50 = getmode(N50), 
-			      L50_ofmeans = L50consolidation(mean_bout_length), N50_ofmeans = N50consolidation(mean_bout_length), 
-			      pct_cons = mean(length)/total_sec*100, pct_cons_L50 = L50/total_sec*100, 
-			      diel = mean(diel), most_awakenings = getmode(most_awakenings))
+                              pct_cons = mean_bout_length/total_sec*100, pct_cons_L50 = mean_L50/total_sec*100, 
+                              diel = mean(diel))
   }
   
   toc()
