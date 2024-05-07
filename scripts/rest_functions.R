@@ -22,8 +22,8 @@ getRest <- function(als_data = als_data, threshold = 15, pct = 0.05) {
 getPhase <- function(als_data = als_data, day = "7:00:00", night = "19:00:00") {
   tic("phase determined")
   
-  day <- as.POSIXct(paste('1970-01-01 ', day), format = "%Y-%m-%d %H:%M:%S", origin = "", tz = "GMT")
-  night <- as.POSIXct(paste('1970-01-01 ', night), format = "%Y-%m-%d %H:%M:%S", origin = "", tz = "GMT")
+  day <- as.POSIXct(paste('1970-01-01 ', day), format = "%Y-%m-%d %H:%M:%S", origin = "1970-01-01 00:00:00", tz = "GMT")
+  night <- as.POSIXct(paste('1970-01-01 ', night), format = "%Y-%m-%d %H:%M:%S", origin = "1970-01-01 00:00:00", tz = "GMT")
   
   dawn_start <- format(day - hours(1), format="%H:%M:%S")
   dawn_end <- format(day + hours(1), format="%H:%M:%S")
@@ -31,9 +31,9 @@ getPhase <- function(als_data = als_data, day = "7:00:00", night = "19:00:00") {
   dusk_start <- format(night - hours(1), format="%H:%M:%S")
   dusk_end <- format(night + hours(1), format="%H:%M:%S")
   
-  als_data <- mutate(als_data, phase = case_when(between(format(as.POSIXct(datetime), format="%H:%M:%S"), dusk_start, dusk_end) ~ 'dusk',
-                                                 between(format(as.POSIXct(datetime), format="%H:%M:%S"), dawn_start, dawn_end) ~ 'dawn',
-                                                 between(format(as.POSIXct(datetime), format="%H:%M:%S"), dawn_end, dusk_start) ~ 'day',
+  als_data <- mutate(als_data, phase = case_when(between(format(as.POSIXct(datetime, origin = "1970-01-01 00:00:00"), format="%H:%M:%S", origin = "1970-01-01 00:00:00"), dusk_start, dusk_end) ~ 'dusk',
+                                                 between(format(as.POSIXct(datetime, origin = "1970-01-01 00:00:00"), format="%H:%M:%S", origin = "1970-01-01 00:00:00"), dawn_start, dawn_end) ~ 'dawn',
+                                                 between(format(as.POSIXct(datetime, origin = "1970-01-01 00:00:00"), format="%H:%M:%S", origin = "1970-01-01 00:00:00"), dawn_end, dusk_start) ~ 'day',
                                                  .default = 'night'))
   
   toc()
@@ -42,11 +42,11 @@ getPhase <- function(als_data = als_data, day = "7:00:00", night = "19:00:00") {
 }
 
 findBoutPhase <- function(start_time, start_phase, end_time, end_phase, day = "07:00:00", night = "19:00:00") {
-  day <- as.POSIXct(paste(format(start_time, "%Y-%m-%d"), day), format = "%Y-%m-%d %H:%M:%S", origin = "", tz = "GMT")
-  night <- as.POSIXct(paste(format(start_time, "%Y-%m-%d"), night), format = "%Y-%m-%d %H:%M:%S", origin = "", tz = "GMT")
+  day <- as.POSIXct(paste(format(start_time, "%Y-%m-%d"), day), format = "%Y-%m-%d %H:%M:%S", origin = "1970-01-01 00:00:00", tz = "GMT")
+  night <- as.POSIXct(paste(format(start_time, "%Y-%m-%d"), night), format = "%Y-%m-%d %H:%M:%S", origin = "1970-01-01 00:00:00", tz = "GMT")
   
-  start_time <- as.POSIXct(start_time, tz = "GMT")
-  end_time <- as.POSIXct(end_time, tz = "GMT")
+  start_time <- as.POSIXct(start_time, origin = "1970-01-01 00:00:00", tz = "GMT")
+  end_time <- as.POSIXct(end_time,  origin = "1970-01-01 00:00:00", tz = "GMT")
   
   dawn_start <- day - hours(1)
   dawn_end <- day + hours(1)
@@ -191,7 +191,8 @@ boutSummary <- function(bout_data = bout_data, summarise_by = c("day", "week"), 
     
   summary <- summarise(daily, total_sec = sum(length), total_hour = total_sec/3600, 
                        freq = length(state), mean_bout_length = mean(length), median_length = median(length), sfi = freq/total_sec,
-                       L50 = L50consolidation(length), N50 = N50consolidation(length), diel = mean(diel),
+                       L50 = L50consolidation(length), N50 = N50consolidation(length), pct_cons = mean(length)/total_sec*100,
+		       pct_cons_L50 = L50/total_sec*100, diel = mean(diel),
                        most_awakenings = getmode(start_phase))
   
   if (summarise_by == "week") { 
@@ -209,6 +210,7 @@ boutSummary <- function(bout_data = bout_data, summarise_by = c("day", "week"), 
                               mean_bout_length = mean(mean_bout_length), mean_sfi = mean(sfi),
                               mean_L50 = mean(L50), mean_N50 = mean(N50), mode_N50 = getmode(N50), 
 			      L50_ofmeans = L50consolidation(mean_bout_length), N50_ofmeans = N50consolidation(mean_bout_length), 
+			      pct_cons = mean(length)/total_sec*100, pct_cons_L50 = L50/total_sec*100, 
 			      diel = mean(diel), most_awakenings = getmode(most_awakenings))
   }
   
