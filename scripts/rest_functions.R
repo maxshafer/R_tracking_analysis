@@ -89,7 +89,7 @@ findDay <- function(start_time, end_time) {
 }
 
 # Creates new dataframe with the bout structure (length, start and end times, and phases)
-boutStructure <- function(als_data = als_data, remove_zeros = TRUE) {
+boutStructure <- function(als_data = als_data, min_bout = 1) {
   tic("bout structure determined")
   als_data$rest <- ifelse(als_data$rest == TRUE, "rest", "active")
   
@@ -108,7 +108,8 @@ boutStructure <- function(als_data = als_data, remove_zeros = TRUE) {
   bouts$species_six <- NA
   bouts$tribe <- NA
   bouts$diel <- NA
-  
+  bouts$mean_y_pos <- NA
+
   time_elapsed = 0
   
   # Assign start and end times and phases
@@ -128,6 +129,8 @@ boutStructure <- function(als_data = als_data, remove_zeros = TRUE) {
       bouts$start[i] <- als_data$datetime[last_bout_index]
       bouts$start_phase[i] <- als_data$phase[last_bout_index]
     }
+
+    bouts$mean_y_pos[i] <- mean(als_data$y_nt[time_elapsed + 1 - bouts$length[i]]:als_data$y_nt[time_elapsed])
   }
   bouts$start[1] <- als_data$datetime[1]
   bouts$start_phase[1] <- als_data$phase[1]
@@ -150,8 +153,8 @@ boutStructure <- function(als_data = als_data, remove_zeros = TRUE) {
   
   #total <- sum(bouts$length)
   #bouts$proportion <- bouts$length/total
-  if (remove_zeros == TRUE) { bouts <- filterBouts(bouts) }
-  
+  bouts <- filterBouts(bouts, min_bout) 
+
   toc()
   
   return(bouts)
@@ -168,8 +171,10 @@ filterBouts <- function(bout_data = bout_data, threshold = 0) {
   for (i in 1:length(state_length)) {
     if (state_length[i] > 1) { 
       bouts$end[i] <- bouts$end[i - 1 + state_length[i]]
+      bouts$mean_y_pos[i] <- mean(bouts$mean_y_pos[i]:bouts$mean_y_pos[i - 1 + state_length[i]])
       bouts$length[i] <- difftime(bouts$end[i], bouts$start[i], unit = "secs")
       ifelse(state_length[i] == 2, bouts <- bouts[-(i + 1),], bouts <- bouts[-((i + 1):(i - 1 + state_length[i])),]) 
+      #bouts$mean_y_pos <- mean(bouts$mean_y_pos[state_length[i]]:bouts$mean_y_pos[i - 1 + state_length[i]])
     }
   }
   
@@ -188,9 +193,9 @@ boutSummary <- function(bout_data = bout_data, summarise_by = c("day", "week"), 
   daily <- group_by(bout_data, day, tribe, species_six, sample_id, state, overall_phase) 
   
   summary <- summarise(daily, total_sec = sum(length), total_hour = total_sec/3600, freq = length(state), 
-                       mean_bout_length = mean(length), median_length = median(length), sfi = freq/total_sec,
-                       L50 = L50consolidation(length), N50 = N50consolidation(length), pct_cons = mean_bout_length/total_sec*100,
-                       pct_cons_L50 = L50/total_sec*100, diel = mean(diel))
+                       mean_bout_length = mean(length), longest_bout = max(length), sfi = freq/total_sec,
+                       L50 = L50consolidation(length), N50 = N50consolidation(length), pct_cons = mean(length)/sum(length)*100,
+                       max_cons = max(length)/total_sec, mean_y = mean(mean_y_pos))
   
   if (summarise_by == "week") { 
     weekly <- summary
@@ -203,11 +208,11 @@ boutSummary <- function(bout_data = bout_data, summarise_by = c("day", "week"), 
     
     weekly <- group_by(weekly, tribe, species_six, sample_id, state, overall_phase) 
     
-    week_summary <- summarise(weekly, mean_total = mean(total_hour), mean_freq = mean(freq), 
-                              mean_bout_length = mean(mean_bout_length), mean_sfi = mean(sfi),
+    week_summary <- summarise(weekly, mean_total_sec = mean(total_sec), mean_total = mean(total_hour), mean_freq = mean(freq), 
+                              mean_bout_length = mean(mean_bout_length), mean_longest_bout = mean(longest_bout), abs_longest = max(longest_bout), mean_sfi = mean(sfi),
                               mean_L50 = mean(L50), mean_N50 = mean(N50), mode_N50 = getmode(N50), 
-                              pct_cons = mean_bout_length/total_sec*100, pct_cons_L50 = mean_L50/total_sec*100, 
-                              diel = mean(diel))
+                              pct_cons = mean_bout_length/mean(mean_total_sec)*100, max_cons = max(mean_bout_length)/mean_total_sec,
+                              mean_y = mean(mean_y))
   }
   
   toc()
@@ -240,7 +245,7 @@ L50consolidation <- function(bout_lengths = bout_lengths) {
 
 
 # Write CSVs for bout data
-restData <- function(als_data = als_data, speed_threshold = 15, pct_movement = 0.05, day = "07:00:00", night = "19:00:00") {
+restData <- function(als_data = als_data, speed_threshold = 15, pct_movement = 0.05, day = "07:00:00", night = "19:00:00", min_bout = 4) {
   require("tictoc")
   
   als_data <- getRest(als_data, threshold = speed_threshold, pct = pct_movement)
@@ -248,13 +253,13 @@ restData <- function(als_data = als_data, speed_threshold = 15, pct_movement = 0
   
   rest_data <- vector(mode='list', length=3)
   
-  rest_data$bout_data <- boutStructure(als_data)
+  rest_data$bout_data <- boutStructure(als_data, min_bout)
   rest_data$daily_summary <- boutSummary(rest_data$bout_data, "day")
   rest_data$weekly_summary <- boutSummary(rest_data$bout_data, "week")
   
-  write.csv(rest_data$bout_data, paste("/home/ayasha/projects/def-mshafer/ayasha/cichlid_bout_data/", als_data$sample_id[1], "_bout_structure.csv", sep = ""))
-  write.csv(rest_data$daily_summary, paste("/home/ayasha/projects/def-mshafer/ayasha/cichlid_bout_data/", als_data$sample_id[1], "_daily_bout_summary.csv", sep = ""))
-  write.csv(rest_data$weekly_summary, paste("/home/ayasha/projects/def-mshafer/ayasha/cichlid_bout_data/", als_data$sample_id[1], "_weekly_bout_summary.csv", sep = ""))
+  write.csv(rest_data$bout_data, paste("/home/ayasha/projects/def-mshafer/ayasha/cichlid_bout_data/filtered5/y_pos/", als_data$sample_id[1], "_bout_structure.csv", sep = ""))
+  write.csv(rest_data$daily_summary, paste("/home/ayasha/projects/def-mshafer/ayasha/cichlid_bout_data/filtered5/y_pos/", als_data$sample_id[1], "_daily_bout_summary.csv", sep = ""))
+  write.csv(rest_data$weekly_summary, paste("/home/ayasha/projects/def-mshafer/ayasha/cichlid_bout_data/filtered5/y_pos/", als_data$sample_id[1], "_weekly_bout_summary.csv", sep = ""))
   
   return(rest_data)
 }
