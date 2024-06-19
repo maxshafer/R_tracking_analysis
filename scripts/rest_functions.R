@@ -54,9 +54,7 @@ findBoutPhase <- function(start_time, start_phase, end_time, end_phase, day = "0
   dusk_start <- night - hours(1)
   dusk_end <- night + hours(1)
   
-  if (difftime(start_time, start_time, units = "hours") > 24) {
-    return(NA)
-  }
+  #if (difftime(start_time, end_time, units = "hours") > 24) { return(NA) }
   
   if (start_phase == end_phase & day(start_time) == day(end_time)) { return(start_phase) }
   else if (start_phase == "dawn" & (end_phase == "dusk" | end_phase == "night")) { return("day") }
@@ -194,8 +192,8 @@ boutSummary <- function(bout_data = bout_data, summarise_by = c("day", "week"), 
   
   summary <- summarise(daily, total_sec = sum(length), total_hour = total_sec/3600, freq = length(state), 
                        mean_bout_length = mean(length), longest_bout = max(length), sfi = freq/total_sec,
-                       L50 = L50consolidation(length), N50 = N50consolidation(length), pct_cons = mean(length)/sum(length)*100,
-                       max_cons = max(length)/total_sec, mean_y = mean(mean_y_pos))
+                       pct_cons = mean(length)/sum(length)*100,
+                       max_cons = max(length)/total_sec*100, mean_y = mean(mean_y_pos))
   
   if (summarise_by == "week") { 
     weekly <- summary
@@ -208,11 +206,10 @@ boutSummary <- function(bout_data = bout_data, summarise_by = c("day", "week"), 
     
     weekly <- group_by(weekly, tribe, species_six, sample_id, state, overall_phase) 
     
-    week_summary <- summarise(weekly, mean_total_sec = mean(total_sec), mean_total = mean(total_hour), mean_freq = mean(freq), 
+    week_summary <- summarise(weekly, mean_total_sec = mean(total_sec), absolute_total_sec = sum(total_sec), mean_total = mean(total_hour), mean_freq = mean(freq), 
                               mean_bout_length = mean(mean_bout_length), mean_longest_bout = mean(longest_bout), abs_longest = max(longest_bout), mean_sfi = mean(sfi),
-                              mean_L50 = mean(L50), mean_N50 = mean(N50), mode_N50 = getmode(N50), 
-                              pct_cons = mean_bout_length/mean(mean_total_sec)*100, max_cons = max(mean_bout_length)/mean_total_sec,
-                              mean_y = mean(mean_y))
+                              pct_cons = mean_bout_length/mean(mean_total_sec)*100, max_cons = mean_longest_bout/mean_total_sec*100, abs_max_cons = abs_longest/mean_total_sec*100,
+                              mean_max_cons = mean(max_cons), mean_y = mean(mean_y))
   }
   
   toc()
